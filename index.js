@@ -7,7 +7,10 @@ const app = express()
 app.use(cors())
 
 app.get('/', (req, res) => {
-    res.status(200).send("<h1>Привет с нового сервера!</h1>")
+    res.status(200).send(JSON.stringify({
+        name: "hello",
+        age: 0
+    }))
 })
 
 app.listen(PORT, () => console.log(`Server hosted in ${PORT} port`))
