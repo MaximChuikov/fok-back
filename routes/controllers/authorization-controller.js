@@ -23,7 +23,6 @@ class AuthorizationController{
                 })
             }
         }catch (e){
-            console.log('ОШИБКА!')
             res.status(500).end(e.message)
         }
     }

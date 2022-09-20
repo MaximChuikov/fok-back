@@ -1,9 +1,10 @@
 const Router = require('express')
 const api_router = new Router()
 
-const auth = require('./controllers/authorization-controller')
-const user = require('./controllers/user-controller')
+const user_router = require('./user')
+const manager_router = require('./manager')
 
-api_router.get('/user', user.getUserInfo)
+api_router.use('/user', user_router)
+//api_router.use('/manager', manager_router)
 
 module.exports = api_router
