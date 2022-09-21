@@ -10,7 +10,7 @@ const api = require('./routes/api-routes')
 const auth = require('./routes/controllers/authorization-controller')
 
 //app.use(auth.vk_auth)
-app.use('/api', api)
+app.use('/', api)
 
 app.listen(PORT, () => console.log(`Server hosted in ${PORT} port`))
 
