@@ -6,7 +6,7 @@ const user = require('./controllers/user-controller')
 user_router.get('/account', user.getAccountInfo)
 // user_router.post('/account', )
 
-// ?offset=0&days=4
+// ?set=0&days_in_set=4
 user_router.get('/sport-hall-rent', user.getSportHallRent)
 // user_router.get('gym-rent', )
 //

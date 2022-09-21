@@ -2,16 +2,26 @@ const db = require('../database')
 const workingDays = [0, 6]
 const shortName = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
 
+function daysToWorkDay(day){
+    let days_to_work_day = 0
+    while (!workingDays.includes(day)) {
+        day += 1 % 7
+        days_to_work_day++
+    }
+    days_to_work_day--
+    return days_to_work_day
+}
+
 async function mapNeededDaysToDates(sets, days_in_set) {
     const date = new Date()
     const dates = []
 
-    for (let set = 1, days = 0; set <= parseInt(sets);) {
+    for (let set = 0, days = 0; set <= parseInt(sets);) {
         if (workingDays.includes(date.getDay())) {
             days++
             if (days > days_in_set) {
                 set++
-                days = 0
+                days = 1
             }
             if (set === parseInt(sets)) {
                 dates.push(
@@ -24,13 +34,7 @@ async function mapNeededDaysToDates(sets, days_in_set) {
             }
         } else {
             //check days between the next work day
-            let day = date.getDay()
-            let days_to_work_day = 0
-            while (!workingDays.includes(day)) {
-                day += 1 % 7
-                days_to_work_day++
-            }
-            days_to_work_day--
+            const days_to_work_day = daysToWorkDay(date.getDay())
             if (days_to_work_day > 0) {
                 const current_date = `'${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}'`
                 date.setDate(date.getDate() + days_to_work_day)
@@ -47,7 +51,7 @@ async function mapNeededDaysToDates(sets, days_in_set) {
                         days++
                         if (days > days_in_set) {
                             set++
-                            days = 0
+                            days = 1
                         }
                         if (set === parseInt(sets)) {
                             dates.push(
@@ -70,8 +74,97 @@ async function mapNeededDaysToDates(sets, days_in_set) {
 function isTimeCross(firstStart, firstEnd, secondStart, secondEnd){
     return firstEnd >= secondStart && firstStart <= secondEnd
 }
+function setHoursToDateCopy(date, time){
+    const hms = time.split(':')
+    const date_copy = new Date(date.getTime())
+    date_copy.setHours(hms[0], hms[1], hms[2])
+    return date_copy
+}
+
+async function getSchedule(set, days, variant){
+    const dates = await mapNeededDaysToDates(set, days)
+
+    const schedule = await db.query(`
+                SELECT price, starts, ends
+                FROM public.aviable_time
+                WHERE variant_id = ${variant}
+            `).then(r => r.rows)
+
+    for (const day of dates) {
+        const events = await db.query(`
+                    SELECT name, "end", start
+                    FROM public.event
+                    WHERE variant_id = ${variant} AND
+                    start <= '${day.dateString}' AND
+                    "end" >= '${day.dateString}'
+                `).then(r => r.rows).catch(_ => [])
+
+        const add_time = await db.query(`
+            SELECT date, start, "end", price
+                FROM public.additional_time
+                WHERE date = '${day.dateString}'
+                AND variant_id = ${variant}
+        `).then(r => r.rows)
+
+        day.schedule = day.isWorkingDay ?
+            JSON.parse(JSON.stringify(schedule)) : add_time
+
+        //получение брони на текущий день
+        const day_booked_time = await db.query(`
+                SELECT time_start, time_end
+                FROM public.successful_request
+                WHERE date = '${day.dateString}'
+                    AND is_group = true
+                    AND variant_id = 1
+            `).then(r => r.rows)
+
+        for (const time of day.schedule) {
+
+            let isEvent = false;
+            for (const event of events) {
+                const time_s = setHoursToDateCopy(time.date, time.start)
+                const time_e = setHoursToDateCopy(time.date, time.end)
+
+                if (isTimeCross(time_s, time_e, event.start, event.end)) {
+                    time.info = {
+                        status: 'event',
+                        name: event.name
+                    }
+                    isEvent = true
+                    break
+                }
+            }
+            if (isEvent)
+                continue
+
+            let isBooked = false
+            for (const booked of day_booked_time) {
+                if (isTimeCross(time.starts, time.ends, booked.time_start, booked.time_end)) {
+                    time.info = {
+                        status: 'booked'
+                    }
+                    isBooked = true
+                    break
+                }
+            }
+            if (isBooked)
+                continue
+
+            time.info = {
+                status: 'free'
+            }
+        }
+    }
+
+    dates.forEach(date => {
+        date.schedule.forEach(time => delete time.date)
+        delete date.dateString
+        delete date.isWorkingDay
+    })
+
+    return dates
+}
 
 module.exports = {
-    mapNeededDaysToDates,
-    isTimeCross
+    getSchedule
 }
