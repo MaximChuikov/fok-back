@@ -158,7 +158,6 @@ async function getSchedule(set, days, variant){
 
     dates.forEach(date => {
         date.schedule.forEach(time => delete time.date)
-        delete date.dateString
         delete date.isWorkingDay
     })
 
