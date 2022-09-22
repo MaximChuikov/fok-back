@@ -72,13 +72,13 @@ async function mapNeededDaysToDates(sets, days_in_set) {
 }
 
 function isTimeCross(firstStart, firstEnd, secondStart, secondEnd){
-    return firstEnd >= secondStart && firstStart <= secondEnd
+    return firstEnd > secondStart && firstStart < secondEnd
 }
-function setHoursToDateCopy(date, time){
+function createDate(date, time){
+    const ymd = date.split('-')
     const hms = time.split(':')
-    const date_copy = new Date(date.getTime())
-    date_copy.setHours(hms[0], hms[1], hms[2])
-    return date_copy
+    const parsed_date = new Date(ymd[0],ymd[1] - 1,ymd[2],hms[0], hms[1], hms[2])
+    return parsed_date
 }
 
 async function getSchedule(set, days, variant){
@@ -122,8 +122,8 @@ async function getSchedule(set, days, variant){
 
             let isEvent = false;
             for (const event of events) {
-                const time_s = setHoursToDateCopy(time.date, time.start)
-                const time_e = setHoursToDateCopy(time.date, time.end)
+                const time_s = createDate(day.dateString, time.starts)
+                const time_e = createDate(day.dateString, time.ends)
 
                 if (isTimeCross(time_s, time_e, event.start, event.end)) {
                     time.info = {

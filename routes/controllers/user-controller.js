@@ -14,7 +14,7 @@ class UserController {
     }
 
     async getSportHallRent(req, res) {
-        try {
+        //try {
             const set = req.query.set
             const days = req.query.days_in_set
 
@@ -24,9 +24,9 @@ class UserController {
                 dates
             })
 
-        } catch (e) {
-            res.status(300).send(e)
-        }
+        // } catch (e) {
+        //     res.status(300).send(e)
+        // }
     }
 }
 
