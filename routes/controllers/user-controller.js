@@ -1,29 +1,36 @@
-const db = require('../../database')
+const emitter = require('../../service/event-bus');
 const day_of_week = require('../../service/day-of-week')
+const db_request = require('../../sql_requests/request')
 
 class UserController {
-    async getAccountInfo(req, res) {
+    async getSchedule(req, res) {
         try {
-            const r = await db.query(`
-                SELECT * FROM public.variant
-            `)
-            res.send(r.rows)
-        } catch (e) {
-            res.status(500).end(e.message)
-        }
-    }
+            const week = req.query.week
+            const variant_id = req.query.variant_id
 
-    async getSportHallRent(req, res) {
-        try {
-            const set = req.query.set
-            const days = req.query.days_in_set
-
-            const dates = await day_of_week.getSchedule(set, days, 1)
+            const dates = await day_of_week.schedule(week, variant_id)
 
             res.send({
-                dates
+                timetable: dates.timetable,
+                schedule: dates.schedule
             })
-
+        } catch (e) {
+            res.status(300).send(e)
+        }
+    }
+    async createRequest(req, res) {
+        try {
+            const body = req.body
+            const [ok,] = await db_request.createRequest(body.variant_id, body.phone, req.vk_id, body.requests)
+            if (ok){
+                emitter.emit('new-request', body)
+                res.status(200).send({
+                    status: "ok"
+                })
+            }
+            else{
+                res.status(500).send('You gave invalid data')
+            }
         } catch (e) {
             res.status(300).send(e)
         }

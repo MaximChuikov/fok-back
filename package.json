@@ -8,7 +8,7 @@
     "start": "node index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Maxim Chuikov Alexandrovich",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.27.2",

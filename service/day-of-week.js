@@ -1,135 +1,114 @@
-const db = require('../database')
+const db_event = require('../sql_requests/event')
+const db_available_time = require('../sql_requests/available_time')
+const db_request = require('../sql_requests/request')
+const db_add_time = require('../sql_requests/additional_time')
+
 const workingDays = [0, 6]
-const shortName = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
+const shortDay = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
+const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 
-function daysToWorkDay(day){
-    let days_to_work_day = 0
-    while (!workingDays.includes(day)) {
-        day += 1 % 7
-        days_to_work_day++
-    }
-    days_to_work_day--
-    return days_to_work_day
+// 9 => 09
+function pad2(num){
+    return num.toString().padStart(2, '0');
 }
 
-async function mapNeededDaysToDates(sets, days_in_set) {
-    const date = new Date()
-    const dates = []
-
-    for (let set = 0, days = 0; set <= parseInt(sets);) {
-        if (workingDays.includes(date.getDay())) {
-            days++
-            if (days > days_in_set) {
-                set++
-                days = 1
-            }
-            if (set === parseInt(sets)) {
-                dates.push(
-                    {
-                        dateString: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
-                        dateShort: `${date.getDate()} ${shortName[date.getDay()]}`,
-                        isWorkingDay: true
-                    }
-                )
-            }
-        } else {
-            //check days between the next work day
-            const days_to_work_day = daysToWorkDay(date.getDay())
-            if (days_to_work_day > 0) {
-                const current_date = `'${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}'`
-                date.setDate(date.getDate() + days_to_work_day)
-                const next_date = `'${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}'`
-
-                const days_between = await db.query(`
-                    SELECT DISTINCT date
-                    FROM public.additional_time
-                    WHERE date >= ${current_date} AND date <= ${next_date}
-                `).then(r => r.rows).catch(e => [])
-
-                if (days_between.length > 0) {
-                    days_between.forEach(d => {
-                        days++
-                        if (days > days_in_set) {
-                            set++
-                            days = 1
-                        }
-                        if (set === parseInt(sets)) {
-                            dates.push(
-                                {
-                                    dateString: `${d.date.getFullYear()}-${d.date.getMonth() + 1}-${d.date.getDate()}`,
-                                    dateShort: `${d.date.getDate()} ${shortName[d.date.getDay()]}`,
-                                    isWorkingDay: false
-                                }
-                            )
-                        }
-                    })
-                }
-            }
-        }
-        date.setDate(date.getDate() + 1)
-    }
-    return dates
+function toYearHour(date) {
+    return (
+        [
+            date.getFullYear(),
+            pad2(date.getMonth() + 1),
+            pad2(date.getDate()),
+        ].join('-') +
+        ' ' +
+        [
+            pad2(date.getHours()),
+            pad2(date.getMinutes()),
+            pad2(date.getSeconds()),
+        ].join(':')
+    );
 }
 
-function isTimeCross(firstStart, firstEnd, secondStart, secondEnd){
+function formatDate(date) {
+    return {
+        fullDate: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
+        shortDate: `${date.getDate()} ${shortMonth[date.getMonth()]}`
+    }
+}
+
+function isOver(currentDate, checkingDateString, startTime) {
+    const checkingDate = createDate(checkingDateString, startTime)
+    return currentDate > checkingDate
+}
+
+function isTimeCross(firstStart, firstEnd, secondStart, secondEnd) {
     return firstEnd > secondStart && firstStart < secondEnd
 }
-function createDate(date, time){
+
+function createDate(date, time) {
     const ymd = date.split('-')
     const hms = time.split(':')
-    const parsed_date = new Date(ymd[0],ymd[1] - 1,ymd[2],hms[0], hms[1], hms[2])
-    return parsed_date
+    return new Date(ymd[0], ymd[1] - 1, ymd[2], hms[0], hms[1], hms[2])
 }
 
-async function getSchedule(set, days, variant){
-    const dates = await mapNeededDaysToDates(set, days)
+function deleteSeconds(timeString) {
+    const hms = timeString.split(':')
+    return `${parseInt(hms[0])}:${hms[1]}`
+}
 
-    const schedule = await db.query(`
-                SELECT price, starts, ends
-                FROM public.aviable_time
-                WHERE variant_id = ${variant}
-            `).then(r => r.rows)
+async function schedule(week, variant_id) {
+    //current date & time
+    const date = new Date()
 
-    for (const day of dates) {
-        const events = await db.query(`
-                    SELECT name, "end", start
-                    FROM public.event
-                    WHERE variant_id = ${variant} AND
-                    start <= '${day.dateString}' AND
-                    "end" >= '${day.dateString}'
-                `).then(r => r.rows).catch(_ => [])
+    //set need week
+    const weekDate = new Date(date.getTime())
+    weekDate.setDate(weekDate.getDate() + week * 7)
 
-        const add_time = await db.query(`
-            SELECT date, start, "end", price
-                FROM public.additional_time
-                WHERE date = '${day.dateString}'
-                AND variant_id = ${variant}
-        `).then(r => r.rows)
+    //monday date of need week
+    const mondayDate = new Date(weekDate.getTime())
+    mondayDate.setDate(mondayDate.getDate() - (mondayDate.getDay() === 0 ? 6 : mondayDate.getDay() - 1))
 
-        day.schedule = day.isWorkingDay ?
-            JSON.parse(JSON.stringify(schedule)) : add_time
+    //sunday date of need week
+    const sundayDate = new Date(mondayDate.getTime())
+    sundayDate.setDate(sundayDate.getDate() + 6)
 
-        //получение брони на текущий день
-        const day_booked_time = await db.query(`
-                SELECT time_start, time_end
-                FROM public.successful_request
-                WHERE date = '${day.dateString}'
-                    AND is_group = true
-                    AND variant_id = 1
-            `).then(r => r.rows)
+    //schedule standard
+    const [, available_time] = await db_available_time.selectAvailableTime(variant_id)
+    //current date in cycle below
+    const cycleDate = new Date(mondayDate.getTime())
 
-        for (const time of day.schedule) {
+    const schedule = []
+    for (let i = 0; i < 7; i++) {
+        //date for response and requests
+        const formattedDate = formatDate(cycleDate)
+        //primary response formatting
+        schedule[i] = formattedDate
+        schedule[i].schedule = JSON.parse(JSON.stringify(available_time))
+        schedule[i].schedule.forEach(time => {
+            time.info = {
+                status: 'disabled',
+                isOver: isOver(date, formattedDate.fullDate, time.time_start)
+            }
+        })
+        //get all data on current cycle date for filter
+        const [ev_er, events] = await db_event.selectEvent(variant_id, formatDate(cycleDate).fullDate)
+        const [bo_er, booked] = await db_request.selectAcceptedRequests(variant_id, formatDate(cycleDate).fullDate)
+        const [ad_er, addTime] = await db_add_time.selectAddTime(variant_id, formatDate(cycleDate).fullDate)
 
+        if (!ev_er || !bo_er || !ad_er){
+            console.error(ev_er, bo_er, ad_er, events, booked, addTime)
+
+        }
+        else
+        //begin filtering data
+        for (const time of schedule[i].schedule) {
+            //check time for event
             let isEvent = false;
             for (const event of events) {
-                const time_s = createDate(day.dateString, time.starts)
-                const time_e = createDate(day.dateString, time.ends)
-
-                if (isTimeCross(time_s, time_e, event.start, event.end)) {
-                    time.info = {
-                        status: 'event',
-                        name: event.name
-                    }
+                const time_s = createDate(formattedDate.fullDate, time.time_start)
+                const time_e = createDate(formattedDate.fullDate, time.time_end)
+                if (isTimeCross(time_s, time_e, event.event_start, event.event_end)) {
+                    time.info.status = 'event'
+                    time.info.name = event.name
                     isEvent = true
                     break
                 }
@@ -137,12 +116,11 @@ async function getSchedule(set, days, variant){
             if (isEvent)
                 continue
 
+            //check time for booking
             let isBooked = false
-            for (const booked of day_booked_time) {
-                if (isTimeCross(time.starts, time.ends, booked.time_start, booked.time_end)) {
-                    time.info = {
-                        status: 'booked'
-                    }
+            for (const book of booked) {
+                if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
+                    time.info.status = 'booked'
                     isBooked = true
                     break
                 }
@@ -150,20 +128,35 @@ async function getSchedule(set, days, variant){
             if (isBooked)
                 continue
 
-            time.info = {
-                status: 'free'
+            //giving status free
+            if (workingDays.includes(cycleDate.getDay())) {
+                //on work day, all time have status free
+                time.info.status = 'free'
+            } else {
+                //on non-working days, should check additional time
+                for (const add of addTime) {
+                    if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
+                        time.info.status = 'free'
+                        break
+                    }
+                }
             }
         }
+        //next day in cycle
+        cycleDate.setDate(cycleDate.getDate() + 1)
     }
 
-    dates.forEach(date => {
-        date.schedule.forEach(time => delete time.date)
-        delete date.isWorkingDay
+    available_time.forEach(time => {
+        time.time_start = deleteSeconds(time.time_start)
+        time.time_end = deleteSeconds(time.time_end)
     })
 
-    return dates
+    return {
+        timetable: available_time,
+        schedule: schedule
+    }
 }
 
 module.exports = {
-    getSchedule
+    schedule
 }
