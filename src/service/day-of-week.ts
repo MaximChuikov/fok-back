@@ -4,15 +4,14 @@ const db_request = require('../sql_requests/request')
 const db_add_time = require('../sql_requests/additional_time')
 
 const workingDays = [0, 6]
-const shortDay = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
 const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 
 // 9 => 09
-function pad2(num){
+function pad2(num: number): string {
     return num.toString().padStart(2, '0');
 }
 
-function toYearHour(date) {
+function toYearHour(date: Date): string {
     return (
         [
             date.getFullYear(),
@@ -28,34 +27,35 @@ function toYearHour(date) {
     );
 }
 
-function formatDate(date) {
+function formatDate(date: Date): { fullDate: string, shortDate: string } {
     return {
         fullDate: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
         shortDate: `${date.getDate()} ${shortMonth[date.getMonth()]}`
     }
 }
 
-function isOver(currentDate, checkingDateString, startTime) {
-    const checkingDate = createDate(checkingDateString, startTime)
-    return currentDate > checkingDate
+function isOver(currentDate: Date, checkingDate: string, startTime: string): boolean {
+    const chDate = createDate(checkingDate, startTime)
+    return currentDate > chDate
 }
 
-function isTimeCross(firstStart, firstEnd, secondStart, secondEnd) {
+function isTimeCross(firstStart: string | Date, firstEnd: string | Date,
+                     secondStart: string | Date, secondEnd: string | Date): boolean {
     return firstEnd > secondStart && firstStart < secondEnd
 }
 
-function createDate(date, time) {
+function createDate(date: string, time: string): Date {
     const ymd = date.split('-')
     const hms = time.split(':')
-    return new Date(ymd[0], ymd[1] - 1, ymd[2], hms[0], hms[1], hms[2])
+    return new Date(parseInt(ymd[0]), parseInt(ymd[1]) - 1, parseInt(ymd[2]), parseInt(hms[0]), parseInt(hms[1]), parseInt(hms[2]))
 }
 
-function deleteSeconds(timeString) {
-    const hms = timeString.split(':')
+function deleteSeconds(time: string): string {
+    const hms = time.split(':')
     return `${parseInt(hms[0])}:${hms[1]}`
 }
 
-async function schedule(week, variant_id) {
+async function schedule(week: number, variant_id: number) {
     //current date & time
     const date = new Date()
 
@@ -72,33 +72,35 @@ async function schedule(week, variant_id) {
     sundayDate.setDate(sundayDate.getDate() + 6)
 
     //schedule standard
-    const [, available_time] = await db_available_time.selectAvailableTime(variant_id)
+    const available_time = await db_available_time.selectAvailableTime(variant_id)
     //current date in cycle below
     const cycleDate = new Date(mondayDate.getTime())
 
-    const schedule = []
+    let schedule = new Array<Schedule>()
     for (let i = 0; i < 7; i++) {
         //date for response and requests
         const formattedDate = formatDate(cycleDate)
         //primary response formatting
-        schedule[i] = formattedDate
+
+        // @ts-ignore
+        schedule[i] = {}
+        schedule[i].fullDate = formattedDate.fullDate
+        schedule[i].shortDate = formattedDate.shortDate
+        // @ts-ignore
         schedule[i].schedule = JSON.parse(JSON.stringify(available_time))
-        schedule[i].schedule.forEach(time => {
-            time.info = {
-                status: 'disabled',
-                isOver: isOver(date, formattedDate.fullDate, time.time_start)
-            }
-        })
-        //get all data on current cycle date for filter
-        const [ev_er, events] = await db_event.selectEvent(variant_id, formatDate(cycleDate).fullDate)
-        const [bo_er, booked] = await db_request.selectAcceptedRequests(variant_id, formatDate(cycleDate).fullDate)
-        const [ad_er, addTime] = await db_add_time.selectAddTime(variant_id, formatDate(cycleDate).fullDate)
-
-        if (!ev_er || !bo_er || !ad_er){
-            console.error(ev_er, bo_er, ad_er, events, booked, addTime)
-
+        for (const time of schedule[i].schedule) {
+            // @ts-ignore
+            time.info = {}
+            // @ts-ignore
+            time.info.status = 'disabled'
+            // @ts-ignore
+            time.info.isOver = isOver(date, formattedDate.fullDate, time.time_start)
         }
-        else
+        //get all data on current cycle date for filter
+        const events = await db_event.selectEvent(variant_id, formatDate(cycleDate).fullDate)
+        const booked = await db_request.selectAcceptedRequests(variant_id, formatDate(cycleDate).fullDate)
+        const addTime = await db_add_time.selectAddTime(variant_id, formatDate(cycleDate).fullDate)
+
         //begin filtering data
         for (const time of schedule[i].schedule) {
             //check time for event
@@ -119,6 +121,7 @@ async function schedule(week, variant_id) {
             //check time for booking
             let isBooked = false
             for (const book of booked) {
+                // @ts-ignore
                 if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
                     time.info.status = 'booked'
                     isBooked = true
@@ -135,6 +138,7 @@ async function schedule(week, variant_id) {
             } else {
                 //on non-working days, should check additional time
                 for (const add of addTime) {
+                    // @ts-ignore
                     if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
                         time.info.status = 'free'
                         break
@@ -145,7 +149,6 @@ async function schedule(week, variant_id) {
         //next day in cycle
         cycleDate.setDate(cycleDate.getDate() + 1)
     }
-
     available_time.forEach(time => {
         time.time_start = deleteSeconds(time.time_start)
         time.time_end = deleteSeconds(time.time_end)
