@@ -3,7 +3,7 @@ const event_router = Router()
 const emitter = require("../service/event-bus");
 
 
-event_router.get('/change-rent', async (req: Request, res: Response) => {
+event_router.get('/change-rent',  (req: Request, res: Response) => {
     res.writeHead(200, {
         'Connection': 'keep-alive',
         'Content-Type': 'text/event-stream',
@@ -24,7 +24,7 @@ event_router.get('/change-rent', async (req: Request, res: Response) => {
 })
 
 
-event_router.get('/new-rent-request', async (req: Request, res: Response) => {
+event_router.get('/new-rent-request',  (req: Request, res: Response) => {
     res.writeHead(200, {
         'Connection': 'keep-alive',
         'Content-Type': 'text/event-stream',

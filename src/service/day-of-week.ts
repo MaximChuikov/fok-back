@@ -1,3 +1,5 @@
+import exp from "constants";
+
 const db_event = require('../sql_requests/event')
 const db_available_time = require('../sql_requests/available_time')
 const db_request = require('../sql_requests/request')
@@ -27,7 +29,7 @@ function toYearHour(date: Date): string {
     );
 }
 
-function formatDate(date: Date): { fullDate: string, shortDate: string } {
+export function formatDate(date: Date): { fullDate: string, shortDate: string } {
     return {
         fullDate: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
         shortDate: `${date.getDate()} ${shortMonth[date.getMonth()]}`
@@ -55,7 +57,7 @@ function deleteSeconds(time: string): string {
     return `${parseInt(hms[0])}:${hms[1]}`
 }
 
-async function schedule(week: number, variant_id: number) {
+export async function schedule(week: number, variant_id: number) {
     //current date & time
     const date = new Date()
 
@@ -158,8 +160,4 @@ async function schedule(week: number, variant_id: number) {
         timetable: available_time,
         schedule: schedule
     }
-}
-
-module.exports = {
-    schedule
 }

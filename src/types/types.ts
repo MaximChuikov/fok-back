@@ -4,7 +4,7 @@ interface Time {
 }
 
 interface DateTime extends Time {
-    date: string
+    date: Date
 }
 
 class Schedule {
