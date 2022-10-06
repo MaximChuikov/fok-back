@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node compiled-js/index.js",
     "dev": "nodemon compiled-js/index.js",
-    "start-ts": "tsc --project tsconfig.json -w",
+    "start-ts": "tsc -w",
     "build": "tsc --project tsconfig.json"
   },
   "keywords": [],

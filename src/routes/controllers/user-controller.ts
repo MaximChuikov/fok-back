@@ -1,4 +1,5 @@
 import {Request, Response} from "express";
+import Group from "../../vk_methods/group";
 
 const emitter = require('../../service/event-bus');
 const day_of_week = require('../../service/day-of-week')
@@ -23,9 +24,13 @@ class UserController {
     async createRequest(req: Request, res: Response) {
         try {
             const body = req.body
-            await db_request.createRequest(body.variant_id, body.phone, req.vk_id, body.requests)
-            emitter.emit('new-request', body)
-            res.status(200)
+            const request_id = await db_request.createRequest(body.variant_id, body.phone, /*req.vk_id*/ 206186509, body.requests)
+            if (parseInt(request_id) !== 0) {
+                const hmm = await Group.sendMessageFromGroup(`Ваша заявка №${request_id} принята в обработку`, 206186509)
+                console.log(hmm)
+                emitter.emit('new-request', body)
+                res.status(200).send(hmm ? 'ok' : 'bad')
+            }
         } catch (e) {
             res.status(500).send(e.message)
         }

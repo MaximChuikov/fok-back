@@ -13,10 +13,11 @@ user_router.get('/rent',
 
 user_router.post('/rent-request',
     body('variant_id').isInt({min: 1}),
-    body('phone').isString(),
+    body('phone').isMobilePhone('ru-RU'),
     body('requests').isArray(),
-    body(['requests.*.date', 'requests.*.start',
-        'requests.*.end']).isString(),
+    body('requests.*.date').isString(),
+    body('requests.*.start').isString(),
+    body('requests.*.end').isString(),
     check,
     user.createRequest)
 

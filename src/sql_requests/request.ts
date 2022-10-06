@@ -1,9 +1,12 @@
-import { pool } from '../database';
+import {pool} from '../database';
+import Group from '../vk_methods/group'
 
 class MyRequest {
-    async selectRequests(variant_id: number, status_id: number): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]>  {
-        const requests: [{request_id: number, phone: string,
-            vk_user_id: number, requested_time: [DateTime]}] = await pool.query(`
+    async selectRequests(variant_id: number, status_id: number): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]> {
+        const requests: [{
+            request_id: number, phone: string,
+            vk_user_id: number, requested_time: [DateTime]
+        }] = await pool.query(`
             SELECT re.request_id, re.phone, re.vk_user_id,
             st.name AS status, va.name AS variant
             FROM public.request as re, public.request_status as st, 
@@ -33,23 +36,35 @@ class MyRequest {
     }
 
     //requests = [ {date, start, end}, ... ]
-    async createRequest(variant_id: number, phone: string, vk_user_id: number, requests: [DateTime]) : Promise<number> {
-        const request_id: number = await pool.query(`
-            INSERT INTO public.request(
-            variant_id, phone, vk_user_id, status_id)
-            VALUES (${variant_id}, ${phone}, ${vk_user_id}, 1)
-            RETURNING request_id;
-        `).then((r: number) => r)
-        for (const req of requests)
-            await pool.query(`
-                INSERT INTO public.requested_time(
+    async createRequest(variant_id: number, phone: string, vk_user_id: number, requests: [DateTime]): Promise<number> {
+        const client = await pool.connect()
+        let request_id: number
+        try {
+            await client.query('BEGIN')
+            request_id = await pool.query(`
+                INSERT INTO public.request(
+                variant_id, phone, vk_user_id, status_id)
+                VALUES (${variant_id}, ${phone}, ${vk_user_id}, 1)
+                RETURNING request_id;
+            `).then((r => r.rows[0].request_id))
+
+            for (const req of requests)
+                await pool.query(`
+                    INSERT INTO public.requested_time(
                     request_id, req_date, req_start, req_end)
                     VALUES (${request_id}, '${req.date}', '${req.start}', '${req.end}');
-            `).then()
+                `).then()
+            await client.query('COMMIT')
+        } catch (e) {
+            await client.query('ROLLBACK')
+            request_id = 0
+        } finally {
+            client.release()
+        }
         return request_id
     }
 
-    async deleteRequest(request_id: number) : Promise<{vk_id: number}>{
+    async deleteRequest(request_id: number): Promise<{ vk_id: number }> {
         return await pool.query(`
             DELETE FROM public.request
             WHERE request_id = ${request_id}
@@ -57,7 +72,7 @@ class MyRequest {
         `).then((r: number) => r)
     }
 
-    async acceptRequest(request_id: number) : Promise<{vk_user_id: number}>{
+    async acceptRequest(request_id: number): Promise<{ vk_user_id: number }> {
         return await pool.query(`
             UPDATE public.request
             SET status_id = 2
