@@ -27,7 +27,6 @@ class UserController {
             const request_id = await db_request.createRequest(body.variant_id, body.phone, req.vk_id, body.requests)
             if (parseInt(request_id) !== 0) {
                 const hmm = await Group.sendMessageFromGroup(`Ваша заявка №${request_id} принята в обработку`, req.vk_id)
-                console.log(hmm)
                 emitter.emit('new-request', body)
                 res.status(200).send(hmm ? 'ok' : 'bad')
             }

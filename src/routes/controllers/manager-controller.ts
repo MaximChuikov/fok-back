@@ -25,7 +25,6 @@ class ManagerController {
                 vk_url: string;
                 request_id: number, phone: string, vk_user_id: number, requested_time: { req_date: Date, req_start: string, req_end: string }[]
             }) => {
-                console.log(x.requested_time)
                 for (const time of x.requested_time) {
                     // @ts-ignore change date type to string
                     time.req_date = formatDate(time.req_date).fullDate
