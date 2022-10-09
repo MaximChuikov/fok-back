@@ -31,11 +31,11 @@ event_router.get('/change-rent',  (req: Request, res: Response) => {
 
 event_router.get('/new-rent-request',  (req: Request, res: Response) => {
     res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
         'Connection': 'keep-alive',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
     })
-    res.setTimeout(0)
     emitter.on('new-request', (data: any) => {
         res.write(`data: ${JSON.stringify(data)} \n\n`)
     })
