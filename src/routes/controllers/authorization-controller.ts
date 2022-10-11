@@ -1,6 +1,4 @@
 import {tryAuth} from "../../vk_methods/auth";
-
-const axios = require('axios')
 import {Request, Response, NextFunction} from 'express';
 
 const db_manager = require('../../sql_requests/manager')

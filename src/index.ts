@@ -1,4 +1,4 @@
-import express, { Application } from 'express'
+import express from 'express'
 import cors from 'cors'
 const api = require('./routes/api-routes')
 

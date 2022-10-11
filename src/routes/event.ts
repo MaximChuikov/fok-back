@@ -1,12 +1,6 @@
 import {Request, Response, Router} from "express"
-import {tryAuth} from "../vk_methods/auth";
 const event_router = Router()
 const emitter = require("../service/event-bus");
-
-event_router.use(async (req, res, next) => {
-    const token = req.query.authorization
-    await tryAuth(req, res, next, token)
-})
 
 event_router.get('/change-rent',  (req: Request, res: Response) => {
     res.writeHead(200, {
