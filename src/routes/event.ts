@@ -1,5 +1,6 @@
 import {Request, Response, Router} from "express"
 const event_router = Router()
+const group = require('../vk_methods/group')
 const emitter = require("../service/event-bus");
 
 event_router.get('/change-rent',  (req: Request, res: Response) => {
@@ -30,7 +31,9 @@ event_router.get('/new-rent-request',  (req: Request, res: Response) => {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
     })
+    group.sendMessageFromGroup('зашел сюда1', 206186509).then()
     emitter.on('new-request', (data: any) => {
+        group.sendMessageFromGroup(JSON.stringify(data), 206186509).then()
         res.write(`data: ${JSON.stringify(data)} \n\n`)
     })
 })
