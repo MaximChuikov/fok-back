@@ -16,12 +16,13 @@ manager_router.get('/rent-requests',
     manager_controller.rentRequests)
 
 manager_router.post('/deny-request',
-    query('request_id').isInt(),
-    body().isString(),
+    body('request_id').isInt(),
     check,
     manager_controller.denyRentRequest)
 
 manager_router.post('/confirm-request',
+    body('request_id').isInt(),
+    check,
     manager_controller.acceptRentRequest)
 
 
