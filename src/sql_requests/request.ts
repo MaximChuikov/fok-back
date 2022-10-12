@@ -38,9 +38,9 @@ class MyRequest {
             FROM public.request as re, public.request_status as st, 
             public.variant as va
             WHERE re.request_id = ${request_id}
-            WHERE re.status_id = st.status_id
+            AND re.status_id = st.status_id
             AND re.variant_id = va.variant_id
-        `).then((r: { rows: [[number, string, number]] }) => r.rows)
+        `).then((r: { rows: [[number, string, number]] }) => r.rows[0])
 
         request.requested_time = await pool.query(`
             SELECT req_date, req_start, req_end
