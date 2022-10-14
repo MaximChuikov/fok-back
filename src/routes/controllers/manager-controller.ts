@@ -1,7 +1,6 @@
 import {Request, Response} from 'express';
 import {formatDate} from "../../service/day-of-week";
 
-const emitter = require('../../service/event-bus');
 const vk_methods = require('../../vk_methods/group')
 const db_manager = require('../../sql_requests/manager')
 const db_request = require('../../sql_requests/request')
@@ -47,7 +46,6 @@ class ManagerController {
                 `К сожалению, ваша бронь №${request_id} отклонена.` + text && `\nПричина: ${text}`,
                 vk_id
             )
-            emitter.emit('not-relevant-request', request_id)
             res.send("ok")
         } catch (e) {
             res.status(500).send(e.message)
@@ -59,9 +57,6 @@ class ManagerController {
             const request_id = req.body.request_id
             const vk_user_id = await db_request.acceptRequest(request_id)
             await vk_methods.sendMessageFromGroup('Ваша заявка принята, ждем вас', vk_user_id)
-            const rent = await db_request.selectRequest(request_id)
-            emitter.emit('new-rent', rent)
-            emitter.emit('not-relevant', request_id)
             res.send('ok')
         } catch (e) {
             res.status(500).send(e.message)

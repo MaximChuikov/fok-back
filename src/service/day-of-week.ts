@@ -100,7 +100,7 @@ export async function schedule(week: number, variant_id: number) {
         }
         //get all data on current cycle date for filter
         const events = await db_event.selectEvent(variant_id, formatDate(cycleDate).fullDate)
-        const booked = await db_request.selectAcceptedRequests(variant_id, formatDate(cycleDate).fullDate)
+        const booked = await db_request.selectAcceptedRequestsByDate(variant_id, formatDate(cycleDate).fullDate)
         const addTime = await db_add_time.selectAddTime(variant_id, formatDate(cycleDate).fullDate)
 
         //begin filtering data
@@ -124,7 +124,7 @@ export async function schedule(week: number, variant_id: number) {
             let isBooked = false
             for (const book of booked) {
                 // @ts-ignore
-                if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
+                if (isTimeCross(time.time_start, time.time_end, book.req_start, book.req_end)) {
                     time.info.status = 'booked'
                     isBooked = true
                     break
@@ -160,4 +160,22 @@ export async function schedule(week: number, variant_id: number) {
         timetable: available_time,
         schedule: schedule
     }
+}
+
+export function findCrossing(first: DateTime[], second: DateTime[]) {
+    for (const sec of second) {
+        //@ts-ignore
+        const s = JSON.stringify({date: formatDate(sec.req_date).fullDate, start: sec.req_start, end: sec.req_end})
+        for (const ft of first) {
+            const o = JSON.stringify({date: ft.date, start: ft.start, end: ft.end})
+            if (o === s)
+                return true
+        }
+    }
+
+
+
+
+
+    return false
 }
