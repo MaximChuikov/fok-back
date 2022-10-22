@@ -1,6 +1,6 @@
 import {Router} from "express"
 const api_router = Router()
-import { body, query, header } from 'express-validator'
+import { header } from 'express-validator'
 import {check} from './sender-invalid-req-error'
 
 const user_router = require('./user')

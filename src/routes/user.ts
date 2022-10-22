@@ -12,14 +12,16 @@ user_router.get('/rent',
     user.getSchedule)
 
 user_router.post('/rent-request',
-    body('variant_id').isInt({min: 1}),
+    body('variant_id').isInt(),
     body('phone').isMobilePhone('ru-RU', {}),
     body('requests').isArray(),
     body('requests.*.date').isString(),
     body('requests.*.start').isString(),
     body('requests.*.end').isString(),
-    body('requests.*.price').isInt({min: 0}),
+    body('requests.*.price').isInt(),
     check,
     user.createRequest)
+
+user_router.get('/my-rent', user.userRent)
 
 module.exports = user_router

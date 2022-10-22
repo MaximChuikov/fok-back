@@ -1,9 +1,15 @@
+interface Timestamp {
+    start: Date
+    end: Date
+}
+
 interface Time {
     start: string
     end: string
 }
 
 interface DateTime extends Time {
+    price: any
     date: Date
 }
 

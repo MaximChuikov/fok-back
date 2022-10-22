@@ -2,20 +2,13 @@ import {pool} from '../database'
 import '../types/types'
 
 class Event {
-    async addNewEvent(time: Time, name: string, categories: { variant_id: number }[]): Promise<void> {
-        const event_id = await pool.query(`
+    async addNewEvent(time: Timestamp, name: string, hall_id: number): Promise<void> {
+        await pool.query(`
                 INSERT INTO public.event(
-                event_start, event_end, name)
-                VALUES (${time.start}, '${time.end}', '${name}')
+                event_start, event_end, name, hall_id)
+                VALUES ('${time.start}', '${time.end}', '${name}', ${hall_id})
                 RETURNING event_id
-            `)
-        for (const cat of categories) {
-            await pool.query(`
-                    INSERT INTO public.event_categories(
-                    event_id, variant_id)
-                    VALUES (${event_id}, ${cat});
-                `)
-        }
+        `)
     }
 
     async deleteEvent(event_id: number): Promise<void> {
@@ -25,14 +18,22 @@ class Event {
         `)
     }
 
-    async selectEvent(variant_id: number, date: string): Promise<{event_id: number, event_start: Date, event_end: Date, name: string}[]> {
+    async selectEvent(hall_id: number, date: string): Promise<{ event_id: number, event_start: Date, event_end: Date, name: string }[]> {
         return await pool.query(`
             SELECT event_id, event_start, event_end, name
             FROM public.event
             WHERE TO_CHAR(event_start, 'yyyy-mm-dd') <= '${date}'
             AND TO_CHAR(event_end, 'yyyy-mm-dd') >= '${date}'
+            AND hall_id = ${hall_id};
         `).then((r: { rows: any }) => r.rows)
     }
-
+    async selectAllEvents(hall_id: number): Promise<{ event_id: number, event_start: Date, event_end: Date, name: string }[]> {
+        return await pool.query(`
+            SELECT event_id, event_start, event_end, name
+            FROM public.event
+            WHERE hall_id = ${hall_id};
+        `).then((r: { rows: any }) => r.rows)
+    }
 }
+
 module.exports = new Event()

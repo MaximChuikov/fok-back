@@ -1,9 +1,8 @@
-import exp from "constants";
-
 const db_event = require('../sql_requests/event')
 const db_available_time = require('../sql_requests/available_time')
 const db_request = require('../sql_requests/request')
 const db_add_time = require('../sql_requests/additional_time')
+const db_variant = require('../sql_requests/variant')
 
 const workingDays = [0, 6]
 const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
@@ -57,7 +56,11 @@ function deleteSeconds(time: string): string {
     return `${parseInt(hms[0])}:${hms[1]}`
 }
 
-export async function schedule(week: number, variant_id: number) {
+export async function schedule(week: number, variant_id: number, hall_id: number) {
+    //get info about sport variant
+    const variant: { name: string, hall: number, whole: boolean, capacity: number } = await db_variant.selectVariant(variant_id)
+    const isWholeHall = variant.whole
+
     //current date & time
     const date = new Date()
 
@@ -88,20 +91,20 @@ export async function schedule(week: number, variant_id: number) {
         schedule[i] = {}
         schedule[i].fullDate = formattedDate.fullDate
         schedule[i].shortDate = formattedDate.shortDate
-        // @ts-ignore
         schedule[i].schedule = JSON.parse(JSON.stringify(available_time))
+
         for (const time of schedule[i].schedule) {
             // @ts-ignore
             time.info = {}
-            // @ts-ignore
             time.info.status = 'disabled'
-            // @ts-ignore
             time.info.isOver = isOver(date, formattedDate.fullDate, time.time_start)
         }
         //get all data on current cycle date for filter
-        const events = await db_event.selectEvent(variant_id, formatDate(cycleDate).fullDate)
-        const booked = await db_request.selectAcceptedRequestsByDate(variant_id, formatDate(cycleDate).fullDate)
-        const addTime = await db_add_time.selectAddTime(variant_id, formatDate(cycleDate).fullDate)
+        const events = await db_event.selectEvent(hall_id, formatDate(cycleDate).fullDate)
+        const booked = isWholeHall
+            ? await db_request.selectAcceptedRequestsByDate(hall_id, formatDate(cycleDate).fullDate)
+            : await db_request.selectAcceptedRequestsByDateWithCount(variant_id, formatDate(cycleDate).fullDate, available_time);
+        const addTime = await db_add_time.selectAddTime(hall_id, formatDate(cycleDate).fullDate)
 
         //begin filtering data
         for (const time of schedule[i].schedule) {
@@ -123,11 +126,22 @@ export async function schedule(week: number, variant_id: number) {
             //check time for booking
             let isBooked = false
             for (const book of booked) {
-                // @ts-ignore
-                if (isTimeCross(time.time_start, time.time_end, book.req_start, book.req_end)) {
-                    time.info.status = 'booked'
-                    isBooked = true
-                    break
+                if (isWholeHall) {
+                    if (isTimeCross(time.time_start, time.time_end, book.req_start, book.req_end)) {
+                        time.info.status = 'booked'
+                        isBooked = true
+                        break
+                    }
+                } else {
+                    if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
+                        if (book.filled >= variant.capacity) {
+                            time.info.status = 'overfilled'
+                            // @ts-ignore
+                            time.info.capacity = variant.capacity
+                            isBooked = true
+                            break
+                        }
+                    }
                 }
             }
             if (isBooked)
@@ -136,7 +150,16 @@ export async function schedule(week: number, variant_id: number) {
             //giving status free
             if (workingDays.includes(cycleDate.getDay())) {
                 //on work day, all time have status free
-                time.info.status = 'free'
+                if (isWholeHall) {
+                    time.info.status = 'free'
+                }
+                else {
+                    time.info.status = 'filled'
+                    // @ts-ignore
+                    time.info.filled = booked.filled
+                    // @ts-ignore
+                    time.info.capacity = variant.capacity
+                }
             } else {
                 //on non-working days, should check additional time
                 for (const add of addTime) {
@@ -151,6 +174,7 @@ export async function schedule(week: number, variant_id: number) {
         //next day in cycle
         cycleDate.setDate(cycleDate.getDate() + 1)
     }
+
     available_time.forEach(time => {
         time.time_start = deleteSeconds(time.time_start)
         time.time_end = deleteSeconds(time.time_end)
@@ -172,10 +196,5 @@ export function findCrossing(first: DateTime[], second: DateTime[]) {
                 return true
         }
     }
-
-
-
-
-
     return false
 }

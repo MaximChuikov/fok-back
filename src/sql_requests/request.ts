@@ -18,9 +18,10 @@ class MyRequest {
         `).then((r: { rows: [[number, string, number]] }) => r.rows)
         for (const request of requests)
             request.requested_time = await pool.query(`
-                SELECT req_date, req_start, req_end
+                SELECT req_date, req_start, req_end, req_price
                 FROM public.requested_time
                 WHERE request_id = ${request.request_id}
+                AND req_date >= CURRENT_DATE
             `).then((r: { rows: any }) => r.rows)
         return requests
     }
@@ -43,39 +44,90 @@ class MyRequest {
         `).then((r: { rows: [[number, string, number]] }) => r.rows[0])
 
         request.requested_time = await pool.query(`
-            SELECT req_date, req_start, req_end
+            SELECT req_date, req_start, req_end, req_price
             FROM public.requested_time
             WHERE request_id = ${request_id}
         `).then((r: { rows: any }) => r.rows)
         return request
     }
 
-    async selectAcceptedRequestsByDate(variant_id: number, dateString: string): Promise<Time[]> {
+    async selectAcceptedRequestsByDate(hall_id: number, dateString: string): Promise<Time[]> {
         return await pool.query(`
             SELECT t.req_start, t.req_end
-            FROM public.requested_time as t, public.request as r
+            FROM public.requested_time as t, public.request as r, public.variant as var
             WHERE r.request_id = t.request_id
+            AND var.hall_id = ${hall_id}
+            AND var.variant_id = r.variant_id
             AND r.status_id = 2
             AND t.req_date = '${dateString}'
         `).then((r: { rows: Time }) => r.rows)
     }
 
-    async selectAllAcceptedRequests(variant_id: number): Promise<Time[]> {
+    async selectAcceptedRequestsByDateWithCount(variant_id: number, dateString: string, available_time:
+        { time_start: string, time_end: string, price: number }[]): Promise<{ time_start: string, time_end: string, price: number, filled: number }[]> {
+        const av_time_fill: { time_start: string, time_end: string, price: number, filled: number }[] = []
+        for (const time of available_time) {
+            const fill = await this.selectCount(variant_id, dateString, time.time_start, time.time_end)
+            // @ts-ignore
+            const t = JSON.parse(JSON.stringify(time))
+            t.filled = fill
+            av_time_fill.push(t)
+        }
+        return av_time_fill
+    }
+
+    async selectCount(variant_id: number, dateString: string, start: string, end: string): Promise<number> {
+        return await pool.query(` 
+            SELECT COUNT(*)
+            FROM public.requested_time as rt, public.request as r
+            WHERE r.request_id = rt.request_id
+            AND r.status_id = 2
+            AND rt.req_date = '${dateString}'
+            AND rt.req_start = '${start}'
+            AND rt.req_end = '${end}'
+        `).then((r: { rows: any }) => r.rows[0].count)
+    }
+
+    async selectAllAcceptedRequests(hall_id: number): Promise<Time[]> {
         return await pool.query(`
             SELECT * FROM
-            public.requested_time as t,
-            public.request as r
+            public.requested_time as t, public.variant as var, public.request as r
             WHERE r.request_id = t.request_id
-            AND r.variant_id = ${variant_id}
+            AND r.variant_id = var.variant_id
+            AND var.hall_id = ${hall_id}
             AND r.status_id = 2
+            AND t.req_date >= CURRENT_DATE
         `).then((r: { rows: Time }) => r.rows)
     }
 
-    async selectUserRequests(vk_id: number): Promise< [{
+    async selectTheAllAcceptedRequests(): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]> {
+        const requests: [{
+            request_id: number, phone: string,
+            vk_user_id: number, requested_time: [DateTime]
+        }] = await pool.query(`
+            SELECT re.request_id, re.phone, re.vk_user_id,
+            st.name AS status, va.name AS variant
+            FROM public.request as re, public.request_status as st, 
+            public.variant as va
+            WHERE re.status_id = st.status_id
+            AND st.status_id = 2
+            AND re.variant_id = va.variant_id
+        `).then((r: { rows: [[number, string, number]] }) => r.rows)
+        for (const request of requests)
+            request.requested_time = await pool.query(`
+                SELECT req_date, req_start, req_end, req_price
+                FROM public.requested_time
+                WHERE request_id = ${request.request_id}
+                AND req_date >= CURRENT_DATE
+            `).then((r: { rows: any }) => r.rows)
+        return requests
+    }
+
+    async selectUserRequests(vk_id: number): Promise<[{
         request_id: number, phone: string,
         vk_user_id: number, variant_id: number, requested_time: [DateTime]
-    }]>{
-        const requests: [{
+    }]> {
+        let requests: [{
             request_id: number, phone: string,
             vk_user_id: number, variant_id: number, requested_time: [DateTime]
         }] = await pool.query(`
@@ -89,10 +141,13 @@ class MyRequest {
         `).then((r: { rows: [[number, string, number]] }) => r.rows)
         for (const request of requests)
             request.requested_time = await pool.query(`
-                SELECT req_date, req_start, req_end
+                SELECT req_date, req_start, req_end, req_price
                 FROM public.requested_time
                 WHERE request_id = ${request.request_id}
+                AND req_date >= CURRENT_DATE
             `).then((r: { rows: any }) => r.rows)
+        // @ts-ignore
+        requests = requests.filter(r => r.requested_time.length > 0)
         return requests
     }
 
@@ -109,12 +164,14 @@ class MyRequest {
                 RETURNING request_id;
             `).then((r => r.rows[0].request_id))
 
-            for (const req of requests)
+            for (const req of requests) {
+                // @ts-ignore
                 await pool.query(`
                     INSERT INTO public.requested_time(
-                    request_id, req_date, req_start, req_end)
-                    VALUES (${request_id}, '${req.date}', '${req.start}', '${req.end}');
+                    request_id, req_date, req_start, req_end, req_price)
+                    VALUES (${request_id}, '${req.date}', '${req.start}', '${req.end}', ${req.price});
                 `).then()
+            }
             await client.query('COMMIT')
         } catch (e) {
             await client.query('ROLLBACK')
@@ -130,7 +187,7 @@ class MyRequest {
             DELETE FROM public.request
             WHERE request_id = ${request_id}
             RETURNING vk_user_id;
-        `).then((r: number) => r)
+        `).then((r: any) => r.rows[0].vk_user_id)
     }
 
     async acceptRequest(request_id: number): Promise<{ vk_user_id: number }> {
@@ -139,7 +196,7 @@ class MyRequest {
             SET status_id = 2
             WHERE request_id = ${request_id}
             RETURNING vk_user_id
-        `).then((r: number) => r)
+        `).then((r: any) => r.rows[0].vk_user_id)
     }
 }
 
