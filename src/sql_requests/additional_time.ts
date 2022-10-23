@@ -5,7 +5,7 @@ class AdditionalTime {
         await pool.query(`
                 INSERT INTO public.additional_time(
                 hall_id, time_date, time_start, time_end)
-                VALUES (${hall_id}, ${date}, ${start}, ${end});
+                VALUES (${hall_id}, '${date}', '${start}', '${end}');
             `).then()
     }
 
