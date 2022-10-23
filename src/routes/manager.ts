@@ -45,8 +45,8 @@ manager_router.delete('/event',
     manager_controller.deleteEvent)
 
 manager_router.post('/add-time',
-    body('start').isDate(),
-    body('end').isDate(),
+    body('start').isString(),
+    body('end').isString(),
     body('date').isString(),
     body('hall_id').isInt(),
     check,
