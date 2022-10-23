@@ -134,7 +134,7 @@ class MyRequest {
                     req_date > CURRENT_DATE
                     OR (
                         req_date = CURRENT_DATE 
-                        AND req_start >= CURRENT_TIME
+                        AND req_end >= CURRENT_TIME
                     )
                 )
             `).then((r: { rows: any }) => r.rows)
@@ -168,7 +168,7 @@ class MyRequest {
                     req_date > CURRENT_DATE
                     OR (
                         req_date = CURRENT_DATE 
-                        AND req_start >= CURRENT_TIME
+                        AND req_end >= CURRENT_TIME
                     )
                 )
             `).then((r: { rows: any }) => r.rows)
