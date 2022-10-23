@@ -42,12 +42,8 @@ class ManagerController {
     async denyRentRequest(req: Request, res: Response) {
         try {
             const request_id = req.body.request_id
-            const text = req.body
             const vk_id = await db_request.deleteRequest(request_id)
-            await vk_methods.sendMessageFromGroup(
-                `К сожалению, ваша бронь №${request_id} отклонена.` + text && `\nПричина: ${text}`,
-                vk_id
-            )
+            await vk_methods.sendMessageFromGroup(`Ваша бронь №${request_id} отменена.`, vk_id)
             res.send("ok")
         } catch (e) {
             res.status(500).send(e.message)
@@ -58,7 +54,7 @@ class ManagerController {
         try {
             const request_id = req.body.request_id
             const vk_user_id = await db_request.acceptRequest(request_id)
-            await vk_methods.sendMessageFromGroup('Ваша заявка принята, ждем вас', vk_user_id)
+            await vk_methods.sendMessageFromGroup(`Ваша заявка №${request_id} принята, ждем вас`, vk_user_id)
             res.send('ok')
         } catch (e) {
             res.status(500).send(e.message)

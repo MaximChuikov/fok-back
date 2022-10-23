@@ -21,7 +21,13 @@ class MyRequest {
                 SELECT req_date, req_start, req_end, req_price
                 FROM public.requested_time
                 WHERE request_id = ${request.request_id}
-                AND req_date >= CURRENT_DATE
+                AND (
+                    req_date > CURRENT_DATE
+                    OR (
+                        req_date = CURRENT_DATE 
+                        AND req_start >= CURRENT_TIME
+                    )
+                )
             `).then((r: { rows: any }) => r.rows)
         return requests
     }
@@ -96,12 +102,18 @@ class MyRequest {
             AND r.variant_id = var.variant_id
             AND var.hall_id = ${hall_id}
             AND r.status_id = 2
-            AND t.req_date >= CURRENT_DATE
+            AND (
+                    t.req_date > CURRENT_DATE
+                    OR (
+                        t.req_date = CURRENT_DATE 
+                        AND t.req_start >= CURRENT_TIME
+                    )
+            )
         `).then((r: { rows: Time }) => r.rows)
     }
 
     async selectTheAllAcceptedRequests(): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]> {
-        const requests: [{
+        let requests: [{
             request_id: number, phone: string,
             vk_user_id: number, requested_time: [DateTime]
         }] = await pool.query(`
@@ -118,8 +130,16 @@ class MyRequest {
                 SELECT req_date, req_start, req_end, req_price
                 FROM public.requested_time
                 WHERE request_id = ${request.request_id}
-                AND req_date >= CURRENT_DATE
+                AND (
+                    req_date > CURRENT_DATE
+                    OR (
+                        req_date = CURRENT_DATE 
+                        AND req_start >= CURRENT_TIME
+                    )
+                )
             `).then((r: { rows: any }) => r.rows)
+        // @ts-ignore
+        requests = requests.filter(r => r.requested_time.length > 0)
         return requests
     }
 
@@ -144,7 +164,13 @@ class MyRequest {
                 SELECT req_date, req_start, req_end, req_price
                 FROM public.requested_time
                 WHERE request_id = ${request.request_id}
-                AND req_date >= CURRENT_DATE
+                AND (
+                    req_date > CURRENT_DATE
+                    OR (
+                        req_date = CURRENT_DATE 
+                        AND req_start >= CURRENT_TIME
+                    )
+                )
             `).then((r: { rows: any }) => r.rows)
         // @ts-ignore
         requests = requests.filter(r => r.requested_time.length > 0)
