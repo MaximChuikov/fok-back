@@ -153,7 +153,7 @@ class MyRequest {
         }] = await pool.query(`
             SELECT re.request_id, re.phone, re.vk_user_id,
             st.name AS status, va.name AS variant, va.variant_id, va.variant_id
-            FROM public.request as re, public.request_status as st, 
+            FROM public.request as re, public.request_status as st,
             public.variant as va
             WHERE re.status_id = st.status_id
             AND re.variant_id = va.variant_id
@@ -173,8 +173,7 @@ class MyRequest {
                 )
             `).then((r: { rows: any }) => r.rows)
         // @ts-ignore
-        requests = requests.filter(r => r.requested_time.length > 0)
-        return requests
+        return requests.filter(r => r.requested_time.length > 0)
     }
 
     //requests = [ {date, start, end}, ... ]
