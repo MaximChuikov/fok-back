@@ -38,10 +38,9 @@ class UserController {
                 return res.status(409).send('Запрещено бронировать более 4 часов');
 
 
-            const user_time = user_data
+            const user_time = [].concat(...(user_data
                 .filter(request => request.variant_id === body.variant_id)
-                .map(e => e.requested_time)
-                .flat(1)
+                .map(e => e.requested_time)))
 
             if (day_of_week.findCrossing(body.requests, user_time))
                 return res.status(409).send('Вы уже забронировали это время');
