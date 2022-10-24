@@ -72,6 +72,21 @@ class UserController {
             res.status(500).send(e.message)
         }
     }
+
+    async deleteMyRequest(req: Request, res: Response) {
+        try {
+            const {vk_user_id} = await db_request.selectRequest(req.query.request_id)
+            if (req.vk_id == vk_user_id){
+                await db_request.deleteRequest(req.query.request_id)
+                res.send('ok')
+            }
+            else {
+                res.status(409).send('Это не ваша заявка')
+            }
+        } catch (e) {
+            res.status(500).send(e.message)
+        }
+    }
 }
 
 module.exports = new UserController()

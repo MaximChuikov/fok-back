@@ -1,5 +1,6 @@
-import { body, query } from 'express-validator'
+import {body, query} from 'express-validator'
 import {check} from './sender-invalid-req-error'
+
 const Router = require('express')
 const user_router = new Router()
 
@@ -23,5 +24,9 @@ user_router.post('/rent-request',
     user.createRequest)
 
 user_router.get('/my-rent', user.userRent)
+user_router.delete('/my-rent',
+    query('request_id').isInt(),
+    check,
+    user.deleteMyRequest)
 
 module.exports = user_router
