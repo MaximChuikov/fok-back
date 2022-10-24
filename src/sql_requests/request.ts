@@ -70,7 +70,7 @@ class MyRequest {
     }
 
     async selectAcceptedRequestsByDateWithCount(variant_id: number, dateString: string, available_time:
-        { time_start: string, time_end: string, price: number }[]): Promise<{ time_start: string, time_end: string, price: number, filled: number }[]> {
+        { time_start: string, time_end: string}[]): Promise<{ time_start: string, time_end: string, price: number, filled: number }[]> {
         const av_time_fill: { time_start: string, time_end: string, price: number, filled: number }[] = []
         for (const time of available_time) {
             const fill = await this.selectCount(variant_id, dateString, time.time_start, time.time_end)
@@ -87,6 +87,7 @@ class MyRequest {
             SELECT COUNT(*)
             FROM public.requested_time as rt, public.request as r
             WHERE r.request_id = rt.request_id
+            AND r.variant_id = ${variant_id}
             AND r.status_id = 2
             AND rt.req_date = '${dateString}'
             AND rt.req_start = '${start}'

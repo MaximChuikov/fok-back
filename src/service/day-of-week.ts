@@ -4,28 +4,11 @@ const db_request = require('../sql_requests/request')
 const db_add_time = require('../sql_requests/additional_time')
 const db_variant = require('../sql_requests/variant')
 
-const workingDays = [0, 6]
 const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 
 // 9 => 09
 function pad2(num: number): string {
     return num.toString().padStart(2, '0');
-}
-
-function toYearHour(date: Date): string {
-    return (
-        [
-            date.getFullYear(),
-            pad2(date.getMonth() + 1),
-            pad2(date.getDate()),
-        ].join('-') +
-        ' ' +
-        [
-            pad2(date.getHours()),
-            pad2(date.getMinutes()),
-            pad2(date.getSeconds()),
-        ].join(':')
-    );
 }
 
 export function formatDate(date: Date): { fullDate: string, shortDate: string } {
@@ -76,8 +59,6 @@ export async function schedule(week: number, variant_id: number, hall_id: number
     const sundayDate = new Date(mondayDate.getTime())
     sundayDate.setDate(sundayDate.getDate() + 6)
 
-    //schedule standard
-    const available_time = await db_available_time.selectAvailableTime(variant_id)
     //current date in cycle below
     const cycleDate = new Date(mondayDate.getTime())
 
@@ -91,7 +72,11 @@ export async function schedule(week: number, variant_id: number, hall_id: number
         schedule[i] = {}
         schedule[i].fullDate = formattedDate.fullDate
         schedule[i].shortDate = formattedDate.shortDate
-        schedule[i].schedule = JSON.parse(JSON.stringify(available_time))
+        const av_time = db_available_time.selectAvailableTime(variant_id, cycleDate.getDay())
+        const available_time: { time: number, price: number }[] = av_time.table
+        const timetable: { time_start: string, time_end: string }[] = av_time.timetable
+        // @ts-ignore
+        schedule[i].schedule = timetable
 
         for (const time of schedule[i].schedule) {
             // @ts-ignore
@@ -103,7 +88,7 @@ export async function schedule(week: number, variant_id: number, hall_id: number
         const events = await db_event.selectEvent(hall_id, formatDate(cycleDate).fullDate)
         const booked = isWholeHall
             ? await db_request.selectAcceptedRequestsByDate(hall_id, formatDate(cycleDate).fullDate)
-            : await db_request.selectAcceptedRequestsByDateWithCount(variant_id, formatDate(cycleDate).fullDate, available_time);
+            : await db_request.selectAcceptedRequestsByDateWithCount(variant_id, formatDate(cycleDate).fullDate, timetable);
         const addTime = await db_add_time.selectAddTime(hall_id, formatDate(cycleDate).fullDate)
 
         //begin filtering data
@@ -133,55 +118,54 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                         break
                     }
                 } else {
-                    if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
-                        if (book.filled >= variant.capacity) {
-                            time.info.status = 'overfilled'
-                            // @ts-ignore
-                            time.info.capacity = variant.capacity
-                            isBooked = true
-                            break
-                        }
+                    if (book.filled >= variant.capacity) {
+                        time.info.status = 'overfilled'
+                        // @ts-ignore
+                        time.info.capacity = variant.capacity
+                        isBooked = true
+                        break
+                    } else {
+                        time.info.filled = book.filled
                     }
                 }
             }
             if (isBooked)
                 continue
 
-            //giving status free
-            if (workingDays.includes(cycleDate.getDay())) {
-                //on work day, all time have status free
-                if (isWholeHall) {
-                    time.info.status = 'free'
-                }
-                else {
-                    time.info.status = 'filled'
-                    // @ts-ignore
-                    time.info.filled = booked.filled
-                    // @ts-ignore
-                    time.info.capacity = variant.capacity
-                }
-            } else {
-                //on non-working days, should check additional time
-                for (const add of addTime) {
-                    // @ts-ignore
-                    if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
+
+            for (const av_t of available_time) {
+                if (av_t.time === schedule[i].schedule.indexOf(time)) {
+                    if (isWholeHall) {
                         time.info.status = 'free'
                         break
+                    } else {
+                        time.info.status = 'filled'
+                        time.info.capacity = variant.capacity
+                        break
+                    }
+                } else if (isWholeHall) {
+                    for (const add of addTime) {
+                        if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
+                            time.info.status = 'free'
+                            break
+                        }
                     }
                 }
+
             }
         }
         //next day in cycle
         cycleDate.setDate(cycleDate.getDate() + 1)
     }
 
-    available_time.forEach(time => {
+    const timetable = db_available_time.selectTimetable(variant_id)
+    timetable.forEach(time => {
         time.time_start = deleteSeconds(time.time_start)
         time.time_end = deleteSeconds(time.time_end)
     })
 
     return {
-        timetable: available_time,
+        timetable: timetable,
         schedule: schedule
     }
 }

@@ -13,6 +13,12 @@ interface DateTime extends Time {
     date: Date
 }
 
+interface TimePrice {
+    time_start: string,
+    time_end: string,
+    price: number
+}
+
 class Schedule {
     fullDate: string = ""
     shortDate: string = ""
@@ -22,7 +28,9 @@ class Schedule {
         info: {
             status: string
             isOver: boolean
-            name: string | null
+            name: string | undefined
+            filled: number | undefined
+            capacity: number | undefined
         }
     }[] = []
 }
