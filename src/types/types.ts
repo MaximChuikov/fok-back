@@ -23,6 +23,7 @@ class Schedule {
     fullDate: string = ""
     shortDate: string = ""
     schedule: {
+        price: number;
         time_start: string
         time_end: string
         info: {

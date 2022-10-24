@@ -135,6 +135,7 @@ export async function schedule(week: number, variant_id: number, hall_id: number
 
             for (const av_t of available_time) {
                 if (av_t.time === schedule[i].schedule.indexOf(time)) {
+                    time.price = av_t.price
                     if (isWholeHall) {
                         time.info.status = 'free'
                         break
@@ -146,6 +147,8 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                 } else if (isWholeHall) {
                     for (const add of addTime) {
                         if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
+                            //TODO: узнать цену
+                            time.price = 200
                             time.info.status = 'free'
                             break
                         }
