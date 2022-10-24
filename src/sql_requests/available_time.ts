@@ -5,20 +5,20 @@ const schedule = [
         variant_id: 1,
         timetable: [
             {
-                time_start: '8:00',
-                time_end: '8:55',
+                time_start: '8:00:00',
+                time_end: '8:55:00',
             },
             {
-                time_start: '9:00',
-                time_end: '9:55',
+                time_start: '9:00:00',
+                time_end: '9:55:00',
             },
             {
-                time_start: '10:00',
-                time_end: '10:55',
+                time_start: '10:00:00',
+                time_end: '10:55:00',
             },
             {
-                time_start: '11:00',
-                time_end: '11:55',
+                time_start: '11:00:00',
+                time_end: '11:55:00',
             },
 
         ],
@@ -73,8 +73,8 @@ const schedule = [
         variant_id: 2,
         timetable: [
             {
-                time_start: '10:00',
-                time_end: '10:55',
+                time_start: '10:00:00',
+                time_end: '10:55:00',
             }
         ],
         time_price: [
@@ -97,20 +97,20 @@ const schedule = [
         variant_id: 3,
         timetable: [
             {
-                time_start: '8:00',
-                time_end: '8:55',
+                time_start: '8:00:00',
+                time_end: '8:55:00',
             },
             {
-                time_start: '9:00',
-                time_end: '9:55',
+                time_start: '9:00:00',
+                time_end: '9:55:00',
             },
             {
-                time_start: '10:00',
-                time_end: '10:55',
+                time_start: '10:00:00',
+                time_end: '10:55:00',
             },
             {
-                time_start: '11:00',
-                time_end: '11:55',
+                time_start: '11:00:00',
+                time_end: '11:55:00',
             },
 
         ],
@@ -164,8 +164,8 @@ const schedule = [
         variant_id: 4,
         timetable: [
             {
-                time_start: '10:00',
-                time_end: '10:55',
+                time_start: '10:00:00',
+                time_end: '10:55:00',
             }
         ],
         time_price: [
@@ -188,20 +188,20 @@ const schedule = [
         variant_id: 5,
         timetable: [
             {
-                time_start: '8:00',
-                time_end: '8:55',
+                time_start: '8:00:00',
+                time_end: '8:55:00',
             },
             {
-                time_start: '9:00',
-                time_end: '9:55',
+                time_start: '9:00:00',
+                time_end: '9:55:00',
             },
             {
-                time_start: '10:00',
-                time_end: '10:55',
+                time_start: '10:00:00',
+                time_end: '10:55:00',
             },
             {
-                time_start: '11:00',
-                time_end: '11:55',
+                time_start: '11:00:00',
+                time_end: '11:55:00',
             },
 
         ],
