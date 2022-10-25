@@ -118,14 +118,16 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                         break
                     }
                 } else {
-                    if (book.filled >= variant.capacity) {
-                        time.info.status = 'overfilled'
-                        // @ts-ignore
-                        time.info.capacity = variant.capacity
-                        isBooked = true
-                        break
-                    } else {
-                        time.info.filled = book.filled
+                    if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
+                        if (book.filled >= variant.capacity) {
+                            time.info.status = 'overfilled'
+                            // @ts-ignore
+                            time.info.capacity = variant.capacity
+                            isBooked = true
+                            break
+                        } else {
+                            time.info.filled = book.filled
+                        }
                     }
                 }
             }
