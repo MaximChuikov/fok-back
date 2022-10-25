@@ -1,6 +1,6 @@
 import {Request, Response} from 'express';
-import {formatDate} from "../../service/day-of-week";
-
+const db_variant = require("../../sql_requests/variant")
+const day_of_week = require("../../service/day-of-week")
 const vk_methods = require('../../vk_methods/group')
 const db_manager = require('../../sql_requests/manager')
 const db_request = require('../../sql_requests/request')
@@ -53,6 +53,20 @@ class ManagerController {
     async acceptRentRequest(req: Request, res: Response) {
         try {
             const request_id = req.body.request_id
+            const {variant_id, requested_time} = await db_request.selectRequest(request_id)
+            const variant_info = await db_variant.selectVariant(variant_id)
+            if (variant_info.whole) {
+                const acceptedRent = await db_request.selectAllAcceptedRequests(variant_id)
+                if (day_of_week.findCrossing(requested_time, acceptedRent))
+                    return res.status(409).send('Время уже занято другим человеком');
+            } else {
+                for (const time of requested_time) {
+                    const fill = await db_request.selectCount(variant_id, time.date, time.start, time.end)
+                    if (fill + 1 > variant_info.capacity)
+                        return res.status(409).send('На это время уже забронировано максимальное количество человек');
+                }
+            }
+
             const vk_user_id = await db_request.acceptRequest(request_id)
             await vk_methods.sendMessageFromGroup(`Ваша заявка №${request_id} принята, ждем вас`, vk_user_id)
             res.send('ok')

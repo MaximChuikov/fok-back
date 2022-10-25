@@ -34,14 +34,15 @@ class MyRequest {
 
     async selectRequest(request_id: number): Promise<{
         request_id: number, phone: string,
-        vk_user_id: number, status: string, variant: string, requested_time: [DateTime]
+        vk_user_id: number, status: string, variant: string, variant_id: number,
+        requested_time: {req_date: string, req_start: string, req_end: string, req_price: number}[]
     }> {
         const request: {
             request_id: number, phone: string,
-            vk_user_id: number, status: string, variant: string, requested_time: [DateTime]
+            vk_user_id: number, status: string, variant: string, variant_id: number, requested_time: any
         } = await pool.query(`
             SELECT re.request_id, re.phone, re.vk_user_id,
-            st.name AS status, va.name AS variant
+            st.name AS status, va.name AS variant, va.variant_id
             FROM public.request as re, public.request_status as st, 
             public.variant as va
             WHERE re.request_id = ${request_id}
