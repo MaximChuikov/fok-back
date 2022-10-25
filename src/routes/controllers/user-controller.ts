@@ -32,14 +32,14 @@ class UserController {
                 = await db_request.selectUserRequests(req.vk_id)
             const variant_info = await db_variant.selectVariant(body.variant_id)
 
-            if (user_data.length > 2)
+            if (user_data.length >= 2)
                 return res.status(409).send('Запрещено иметь более двух броней');
             if (body.requests.length > 4)
                 return res.status(409).send('Запрещено бронировать более 4 часов');
 
 
             const user_time = [].concat(...(user_data
-                .filter(request => request.variant_id === body.variant_id)
+                .filter(request => request.variant_id == body.variant_id)
                 .map(e => e.requested_time)))
 
             if (day_of_week.findCrossing(body.requests, user_time))
