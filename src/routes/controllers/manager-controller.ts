@@ -1,4 +1,5 @@
 import {Request, Response} from 'express';
+import {formatDate} from "../../service/day-of-week";
 const db_variant = require("../../sql_requests/variant")
 const day_of_week = require("../../service/day-of-week")
 const vk_methods = require('../../vk_methods/group')
@@ -27,7 +28,7 @@ class ManagerController {
                 request_id: number, phone: string, vk_user_id: number, requested_time: { req_date: Date, req_start: string, req_end: string }[]
             }) => {
                 for (const time of x.requested_time) {
-                    // @ts-ignore change date type to string
+                    // @ts-ignore
                     time.req_date = formatDate(time.req_date).fullDate
                 }
                 x.vk_url = `https://vk.com/id${x.vk_user_id}`

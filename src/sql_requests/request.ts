@@ -35,7 +35,7 @@ class MyRequest {
     async selectRequest(request_id: number): Promise<{
         request_id: number, phone: string,
         vk_user_id: number, status: string, variant: string, variant_id: number,
-        requested_time: {req_date: string, req_start: string, req_end: string, req_price: number}[]
+        requested_time: { req_date: string, req_start: string, req_end: string, req_price: number }[]
     }> {
         const request: {
             request_id: number, phone: string,
@@ -71,7 +71,7 @@ class MyRequest {
     }
 
     async selectAcceptedRequestsByDateWithCount(variant_id: number, dateString: string, available_time:
-        { time_start: string, time_end: string}[]): Promise<{ time_start: string, time_end: string, price: number, filled: number }[]> {
+        { time_start: string, time_end: string }[]): Promise<{ time_start: string, time_end: string, price: number, filled: number }[]> {
         const av_time_fill: { time_start: string, time_end: string, price: number, filled: number }[] = []
         for (const time of available_time) {
             const fill = await this.selectCount(variant_id, dateString, time.time_start, time.time_end)
@@ -114,10 +114,13 @@ class MyRequest {
         `).then((r: { rows: Time }) => r.rows)
     }
 
-    async selectTheAllAcceptedRequests(): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]> {
+    async selectTheAllAcceptedRequests(): Promise<[{
+        request_id: number; phone: string; vk_user_id: number;
+        requested_time: { req_date: string, req_start: string, req_end: string, req_price: number }[]
+    }]> {
         let requests: [{
             request_id: number, phone: string,
-            vk_user_id: number, requested_time: [DateTime]
+            vk_user_id: number, requested_time: { req_date: string, req_start: string, req_end: string, req_price: number }[]
         }] = await pool.query(`
             SELECT re.request_id, re.phone, re.vk_user_id,
             st.name AS status, va.name AS variant
@@ -142,6 +145,29 @@ class MyRequest {
             `).then((r: { rows: any }) => r.rows)
         // @ts-ignore
         requests = requests.filter(r => r.requested_time.length > 0)
+
+        function findMin(el: { req_date: string, req_start: string, req_end: string, req_price: number }[]) {
+            if (el.length === 0) return
+            let min = el[0].req_date + el[0].req_start
+            el.forEach(x => {
+                const str = x.req_date + x.req_start
+                if (str < min)
+                    min = str
+            })
+            return min
+        }
+
+        requests.sort((a, b) => {
+            const a_min = findMin(a.requested_time)
+            const b_min = findMin(b.requested_time)
+            if (a_min < b_min)
+                return -1
+            else if (a_min > b_min)
+                return 1
+            else
+                return 0
+        })
+
         return requests
     }
 
