@@ -178,9 +178,9 @@ export async function schedule(week: number, variant_id: number, hall_id: number
 export function findCrossing(first: DateTime[], second: DateTime[]) {
     for (const sec of second) {
         //@ts-ignore
-        const s = JSON.stringify({date: formatDate(sec.req_date).fullDate, start: sec.req_start, end: sec.req_end})
+        const s = JSON.stringify({date: formatDate(sec.req_date).fullDate, start: deleteSeconds(sec.req_start), end: deleteSeconds(sec.req_end)})
         for (const ft of first) {
-            const o = JSON.stringify({date: ft.date, start: ft.start, end: ft.end})
+            const o = JSON.stringify({date: ft.date, start: deleteSeconds(ft.start), end: deleteSeconds(ft.end)})
             if (o === s)
                 return true
         }
