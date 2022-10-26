@@ -1,5 +1,6 @@
 import {pool} from '../database';
 import Group from '../vk_methods/group'
+import {formatDate} from "../service/day-of-week";
 
 class MyRequest {
     async selectRequests(variant_id: number, status_id: number): Promise<[{ request_id: number; phone: string; vk_user_id: number; requested_time: [DateTime] }]> {
@@ -148,16 +149,18 @@ class MyRequest {
 
         function findMin(el: { req_date: string, req_start: string, req_end: string, req_price: number }[]) {
             if (el.length === 0) return
-            let min = el[0].req_date + el[0].req_start
+            // @ts-ignore
+            let min = formatDate(el[0].req_date).fullDate + el[0].req_start
             el.forEach(x => {
-                const str = x.req_date + x.req_start
+                // @ts-ignore
+                const str = formatDate(x.req_date) + x.req_start
                 if (str < min)
                     min = str
             })
             return min
         }
 
-        requests.sort((a, b) => {
+        return requests.sort((a, b) => {
             const a_min = findMin(a.requested_time)
             const b_min = findMin(b.requested_time)
             if (a_min < b_min)
@@ -167,8 +170,6 @@ class MyRequest {
             else
                 return 0
         })
-
-        return requests
     }
 
     async selectUserRequests(vk_id: number): Promise<[{
