@@ -52,7 +52,7 @@ class UserController {
             } else {
                 for (const time of body.requests) {
                     const fill = await db_request.selectCount(body.variant_id, time.date, time.start, time.end)
-                    if (fill + 1 > variant_info.capacity)
+                    if (fill == variant_info.capacity)
                         return res.status(409).send('На это время уже забронировано максимальное количество человек');
                 }
             }
