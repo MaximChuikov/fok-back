@@ -63,7 +63,7 @@ class ManagerController {
             } else {
                 for (const time of requested_time) {
                     const fill = await db_request.selectCount(variant_id, day_of_week.formatDate(time.req_date).fullDate, time.req_start, time.req_end)
-                    if (fill + 1 > variant_info.capacity)
+                    if (fill >= variant_info.capacity)
                         return res.status(409).send('На это время уже забронировано максимальное количество человек');
                 }
             }
