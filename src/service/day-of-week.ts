@@ -25,7 +25,9 @@ function isOver(currentDate: Date, checkingDate: string, startTime: string): boo
 
 function isTimeCross(firstStart: string | Date, firstEnd: string | Date,
                      secondStart: string | Date, secondEnd: string | Date): boolean {
-    return firstEnd > secondStart && firstStart < secondEnd
+    return ( firstEnd > secondStart && firstStart < secondEnd ) || (
+        firstStart == secondStart && firstEnd == secondEnd
+    )
 }
 
 function createDate(date: string, time: string): Date {
