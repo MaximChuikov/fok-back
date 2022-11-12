@@ -114,6 +114,7 @@ const schedule = [
     {
         //футбол весь зал
         variant_id: 1,
+        add_price: 2000,
         timetable: timetable_for_all,
         //воскр, понед, ..., субб
         time_price: [
@@ -161,6 +162,7 @@ const schedule = [
     {
         //баскет весь зал
         variant_id: 3,
+        add_price: 2000,
         timetable: timetable_for_all,
         time_price: [
             price_for_all,
@@ -230,6 +232,7 @@ class AvailableTime {
         return JSON.parse(JSON.stringify({
             // @ts-ignore
             timetable: sch.timetable,
+            add_price: sch.add_price,
             table: sch.time_price[day_of_week]
         }))
     }

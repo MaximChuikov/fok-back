@@ -25,7 +25,7 @@ function isOver(currentDate: Date, checkingDate: string, startTime: string): boo
 
 function isTimeCross(firstStart: string | Date, firstEnd: string | Date,
                      secondStart: string | Date, secondEnd: string | Date): boolean {
-    return ( firstEnd > secondStart && firstStart < secondEnd ) || (
+    return (firstEnd > secondStart && firstStart < secondEnd) || (
         firstStart == secondStart && firstEnd == secondEnd
     )
 }
@@ -136,10 +136,11 @@ export async function schedule(week: number, variant_id: number, hall_id: number
             if (isBooked)
                 continue
 
-
+            let isAvT = false;
             for (const av_t of available_time) {
                 if (av_t.time === schedule[i].schedule.indexOf(time)) {
                     time.price = av_t.price
+                    isAvT = true
                     if (isWholeHall) {
                         time.info.status = 'free'
                         break
@@ -148,17 +149,20 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                         time.info.capacity = variant.capacity
                         break
                     }
-                } else if (isWholeHall) {
-                    for (const add of addTime) {
-                        if (isTimeCross(time.time_start, time.time_end, add.time_start, add.time_end)) {
-                            //TODO: узнать цену
-                            time.price = 200
-                            time.info.status = 'free'
-                            break
-                        }
+                }
+            }
+
+            if (isAvT)
+                continue
+
+            if (isWholeHall) {
+                for (const addT of addTime) {
+                    if (isTimeCross(time.time_start, time.time_end, addT.time_start, addT.time_end)) {
+                        time.info.status = 'free'
+                        time.price = av_time.add_price
+                        break
                     }
                 }
-
             }
         }
         //next day in cycle
@@ -179,8 +183,14 @@ export async function schedule(week: number, variant_id: number, hall_id: number
 
 export function findCrossing(first: DateTime[], second: DateTime[]) {
     for (const sec of second) {
-        //@ts-ignore
-        const s = JSON.stringify({date: formatDate(sec.req_date).fullDate, start: deleteSeconds(sec.req_start), end: deleteSeconds(sec.req_end)})
+        const s = JSON.stringify({
+            //@ts-ignore
+            date: formatDate(sec.req_date).fullDate,
+            //@ts-ignore
+            start: deleteSeconds(sec.req_start),
+            //@ts-ignore
+            end: deleteSeconds(sec.req_end)
+        })
         for (const ft of first) {
             const o = JSON.stringify({date: ft.date, start: deleteSeconds(ft.start), end: deleteSeconds(ft.end)})
             if (o === s)
