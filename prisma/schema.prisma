@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Hall {
+  sport_hall
+  gym
+}
+
+model Add_time {
+  time_id    Int      @id @default(autoincrement())
+  hall_id    Int
+  time_date  DateTime @db.Date
+  time_start DateTime @db.Time(6)
+  time_end   DateTime @db.Time(6)
+  hall       Hall
+}
+
+model Event {
+  event_id   Int      @id @default(autoincrement())
+  full_start DateTime @db.Timestamp(6)
+  full_end   DateTime @db.Timestamp(6)
+  name       String   @db.VarChar
+  hall       Hall
+  reason     Reason
+}
+
+enum Reason {
+  repair
+  competition
+}
+
+model Request {
+  request_id     Int              @id @default(autoincrement())
+  variant_id     Int
+  phone          String           @db.VarChar
+  vk_id          Int
+  status         Status           @default(consideration)
+  requested_time Requested_time[]
+  variant        Variant          @relation(fields: [variant_id], references: [variant_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum Status {
+  consideration //на рассмотрении
+  accepted //принята
+  denied //отказано
+  ousted //принята другая заявка на это же время
+  canceled //отменена
+}
+
+model Requested_time {
+  request_id  Int
+  req_date    DateTime @db.Date
+  req_start   DateTime @db.Time(6)
+  req_end     DateTime @db.Time(6)
+  req_price   Int      @default(0)
+  req_time_id Int      @id @default(autoincrement())
+  request     Request  @relation(fields: [request_id], references: [request_id], onDelete: Cascade)
+}
+
+model Variant {
+  variant_id  Int       @id @default(autoincrement())
+  name        String    @db.VarChar
+  entire_hall Boolean   @default(true)
+  capacity    Int
+  hall        Hall
+  Request     Request[]
+}
+
+model Staff {
+  vk_id Int     @id
+  name  String? @db.VarChar
+  role Role
+}
+
+enum Role {
+    administrator
+    event_adder
+}

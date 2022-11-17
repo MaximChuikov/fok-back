@@ -1,6 +1,9 @@
 import {Request, Response} from "express";
 import Group from "../../vk_methods/group";
 
+import {PrismaClient} from "@prisma/client";
+const prisma = new PrismaClient()
+
 const day_of_week = require('../../service/day-of-week')
 const db_request = require('../../sql_requests/request')
 const db_variant = require('../../sql_requests/variant')
@@ -10,6 +13,8 @@ class UserController {
         try {
             const week = req.query.week
             const variant_id = req.query.variant_id
+
+
 
             const hall_id = await db_variant.selectHall(variant_id)
 
