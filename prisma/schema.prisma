@@ -7,75 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Hall {
-  sport_hall
-  gym
+model User {
+  email              String  @id @unique
+  password_hash      String
+  is_activated_email Boolean @default(false)
+  activation_link    String
+  user_name          String
+  user_surname       String
+  phone_number       String
+  role               Role    @default(USER)
+  Book               Book[]
+  Token              Token?
 }
 
-model Add_time {
-  time_id    Int      @id @default(autoincrement())
-  full_start DateTime @db.Timestamp(6)
-  full_end   DateTime @db.Timestamp(6)
-  hall       Hall
+model Token {
+  user_email    String @id @unique
+  user          User   @relation(fields: [user_email], references: [email])
+  refresh_token String
 }
 
 model Event {
-  event_id   Int      @id @default(autoincrement())
-  full_start DateTime @db.Timestamp(6)
-  full_end   DateTime @db.Timestamp(6)
-  name       String   @db.VarChar
-  hall       Hall
-  reason     Reason
+  event_id               Int      @id @unique @default(autoincrement())
+  start_time             DateTime
+  end_time               DateTime
+  publication_date_title String
+  event_description      String
 }
 
-enum Reason {
-  repair
-  competition
+model Book {
+  book_id           Int        @id @unique @default(autoincrement())
+  user_registered   Boolean    @default(true)
+  user_email        String?
+  user              User?      @relation(fields: [user_email], references: [email])
+  non_reg_user_name String?
+  start_time        DateTime
+  end_time          DateTime
+  status            BookStatus @default(PAYMENT_EXPECTED)
+  payment_data      Json
 }
 
-model Request {
-  request_id     Int              @id @default(autoincrement())
-  variant_id     Int
-  phone          String           @db.VarChar
-  vk_id          Int
-  status         Status           @default(consideration)
-  requested_time Requested_time[]
-  variant        Variant          @relation(fields: [variant_id], references: [variant_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-enum Status {
-  consideration //на рассмотрении
-  accepted //принята
-  denied //отказано
-  ousted //принята другая заявка на это же время
-  canceled //отменена
-}
-
-model Requested_time {
-  time_id Int           @id @default(autoincrement())
-  request_id   Int
-  full_start   DateTime @db.Timestamp(6)
-  full_end     DateTime @db.Timestamp(6)
-  price        Int      @default(0)
-  request      Request  @relation(fields: [request_id], references: [request_id], onDelete: Cascade)
-}
-
-model Variant {
-  variant_id  Int       @id @default(autoincrement())
-  name        String    @db.VarChar
-  entire_hall Boolean   @default(true)
-  capacity    Int
-  hall        Hall
-  Request     Request[]
-}
-
-model Staff {
-  vk_id Int     @id
-  name  String? @db.VarChar
-  role Role
+enum BookStatus {
+  PAYMENT_EXPECTED
+  PAID
 }
 
 enum Role {
-    administrator
-    event_adder
+  ADMIN
+  ADMINISTRATOR
+  USER
 }

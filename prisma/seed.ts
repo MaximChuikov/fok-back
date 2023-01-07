@@ -1,4 +1,4 @@
-import {Hall, Role, PrismaClient} from '@prisma/client'
+import {PrismaClient} from '@prisma/client'
 const prisma = new PrismaClient()
 
 
@@ -42,49 +42,49 @@ async function main() {
     // })
     // console.log({ alice, bob })
     console.log('Start seeding')
-    await prisma.staff.createMany({
-        data: [
-            {
-                vk_id: 206186509,
-                name: 'Чуйков Максим',
-                role: Role.administrator
-            }
-        ]
-    })
-    await prisma.variant.createMany({
-        data: [
-            {
-                name: 'Футбол',
-                capacity: 10,
-                hall: Hall.sport_hall,
-                entire_hall: true
-            },
-            {
-                name: 'Футбол',
-                capacity: 10,
-                hall: Hall.sport_hall,
-                entire_hall: false
-            },
-            {
-                name: 'Баскетбол',
-                capacity: 10,
-                hall: Hall.sport_hall,
-                entire_hall: true
-            },
-            {
-                name: 'Баскетбол',
-                capacity: 10,
-                hall: Hall.sport_hall,
-                entire_hall: false
-            },
-            {
-                name: 'Тренажерный зал',
-                capacity: 10,
-                hall: Hall.sport_hall,
-                entire_hall: false
-            }
-        ]
-    })
+    // await prisma.staff.createMany({
+    //     data: [
+    //         {
+    //             vk_id: 206186509,
+    //             name: 'Чуйков Максим',
+    //             role: Role.administrator
+    //         }
+    //     ]
+    // })
+    // await prisma.variant.createMany({
+    //     data: [
+    //         {
+    //             name: 'Футбол',
+    //             capacity: 10,
+    //             hall: Hall.sport_hall,
+    //             entire_hall: true
+    //         },
+    //         {
+    //             name: 'Футбол',
+    //             capacity: 10,
+    //             hall: Hall.sport_hall,
+    //             entire_hall: false
+    //         },
+    //         {
+    //             name: 'Баскетбол',
+    //             capacity: 10,
+    //             hall: Hall.sport_hall,
+    //             entire_hall: true
+    //         },
+    //         {
+    //             name: 'Баскетбол',
+    //             capacity: 10,
+    //             hall: Hall.sport_hall,
+    //             entire_hall: false
+    //         },
+    //         {
+    //             name: 'Тренажерный зал',
+    //             capacity: 10,
+    //             hall: Hall.sport_hall,
+    //             entire_hall: false
+    //         }
+    //     ]
+    // })
     console.log('Stop seeding successfully!')
 }
 

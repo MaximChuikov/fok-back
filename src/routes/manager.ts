@@ -3,8 +3,8 @@ import {body, query} from "express-validator";
 import {check} from "./sender-invalid-req-error";
 
 const manager_router = Router()
-const manager_controller = require('./controllers/manager-controller')
-const auth = require("./controllers/authorization-controller");
+const manager_controller = require('../controllers/manager-controller')
+const auth = require("../controllers/authorization-controller");
 
 
 manager_router.get('/is-manager', manager_controller.isManager)

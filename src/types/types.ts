@@ -1,4 +1,4 @@
-class Schedule {
+export class Schedule {
     fullDate: string = ""
     shortDate: string = ""
     schedule: {
@@ -13,4 +13,20 @@ class Schedule {
             capacity?: number
         }
     }[] = []
+}
+
+export type EventData = {
+    end_time: Date,
+    start_time: Date,
+    event_description: string,
+    publication_date_title: string
+}
+
+export type UserRegistrationData = {
+    email: string,
+    password_hash: string,
+    activation_link: string,
+    user_name: string,
+    user_surname: string,
+    phone_number: string
 }

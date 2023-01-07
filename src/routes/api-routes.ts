@@ -1,20 +1,26 @@
 import {Router} from "express"
-const api_router = Router()
-import { header } from 'express-validator'
+import {body} from 'express-validator'
 import {check} from './sender-invalid-req-error'
+const router = Router()
 
-const user_router = require('./user')
-const manager_router = require('./manager')
-const vk_auth = require('./controllers/authorization-controller')
-
-// api_router.use(
-//     header('authorization', 'No authorization header').isString(),
-//     check,
-//     vk_auth.vk_auth
-// )
-
-api_router.use('/user', user_router)
-api_router.use('/manager', manager_router)
+// const user_router = require('./user')
+// const manager_router = require('./manager')
+import userController from '../controllers/authorization-controller'
 
 
-module.exports = api_router
+router.post('/registration',
+    body('email').isEmail(),
+    body('password').isLength({min: 3, max: 32}),
+    check,
+    userController.registration
+);
+router.post('/login', userController.login);
+router.post('/logout', userController.logout);
+router.get('/activate/:link', userController.activate);
+router.get('/refresh', userController.refresh);
+
+// router.use('/user', user_router)
+// router.use('/manager', manager_router)
+
+
+export default router

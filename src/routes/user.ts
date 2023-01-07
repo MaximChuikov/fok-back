@@ -4,7 +4,7 @@ import {check} from './sender-invalid-req-error'
 const Router = require('express')
 const user_router = new Router()
 
-const user = require('./controllers/user-controller')
+const user = require('../controllers/user-controller')
 
 user_router.get('/rent',
     query('week').isInt({min: 0}),

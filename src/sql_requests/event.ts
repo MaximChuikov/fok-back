@@ -1,17 +1,13 @@
-import {Hall, Reason, PrismaClient, Event as PrismaEvent} from '@prisma/client'
+import {PrismaClient, Event} from '@prisma/client'
+import {EventData} from "../types/types";
 const prisma = new PrismaClient()
 
-class Event {
-    async addNewEvent(start: Date, end: Date, name: string, hall: Hall, reason: Reason): Promise<void> {
+class DbEvent {
+    async addNewEvent(data: EventData): Promise<void> {
         await prisma.event.create({
-            data: {
-                name: name,
-                hall: hall,
-                full_start: start,
-                full_end: end,
-                reason: reason
+                data: data
             }
-        })
+        )
     }
 
     async deleteEvent(event_id: number): Promise<void> {
@@ -25,30 +21,36 @@ class Event {
     /*
         @param date Find 0:00 and 23:59, and finding requests
      */
-    async selectEvents(hall: Hall, date: Date): Promise<PrismaEvent[]> {
-        const morning = new Date(date.getTime())
-        morning.setHours(0, 0, 0)
-        const evening = new Date(date.getDate())
-        evening.setHours(23, 59, 59)
-
-        return  await prisma.event.findMany({
+    async selectNearestEvents(): Promise<Event[]> {
+        const now = new Date()
+        const oneWeekAhead = new Date(now.getTime())
+        oneWeekAhead.setDate(oneWeekAhead.getDate() + 7)
+        return await prisma.event.findMany({
             where: {
                 AND: [
-                    {full_start: {lte: evening}},
-                    {full_end: {gte: morning}}
+                    {start_time: {gte: now}},
+                    {start_time: {lte: oneWeekAhead}}
+                ]
+            },
+            take: 3
+        })
+    }
+
+    async selectArchiveEvents(from?: Date, to?: Date): Promise<Event[]> {
+        if (!from) {
+            from = new Date()
+            from.setDate(from.getDate() - 31)
+        }
+        to = to ?? new Date()
+        return await prisma.event.findMany({
+            where: {
+                AND: [
+                    {start_time: {gte: from}},
+                    {end_time: {lte: to}}
                 ]
             }
         })
     }
-
-    async selectAllEvents(hall: Hall): Promise<PrismaEvent[]> {
-        return await prisma.event.findMany({
-            where: {
-                hall: hall
-            }
-        })
-
-    }
 }
 
-module.exports = new Event()
+module.exports = new DbEvent()
