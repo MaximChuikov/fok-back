@@ -3,6 +3,9 @@ const db_available_time = require('../sql_requests/available_time')
 const db_request = require('../sql_requests/request')
 const db_add_time = require('../sql_requests/additional_time')
 const db_variant = require('../sql_requests/variant')
+import {PrismaClient, Hall, Variant} from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 
@@ -18,22 +21,20 @@ export function formatDate(date: Date): { fullDate: string, shortDate: string } 
     }
 }
 
-function isOver(currentDate: Date, checkingDate: string, startTime: string): boolean {
-    const chDate = createDate(checkingDate, startTime)
-    return currentDate > chDate
+function isOver(currentDate: Date, checkingDate: Date): boolean {
+    return checkingDate > currentDate
 }
 
 function isTimeCross(firstStart: string | Date, firstEnd: string | Date,
                      secondStart: string | Date, secondEnd: string | Date): boolean {
-    return (firstEnd > secondStart && firstStart < secondEnd) || (
-        firstStart == secondStart && firstEnd == secondEnd
-    )
+    return firstEnd > secondStart && firstStart < secondEnd
 }
 
-function createDate(date: string, time: string): Date {
-    const ymd = date.split('-')
-    const hms = time.split(':')
-    return new Date(parseInt(ymd[0]), parseInt(ymd[1]) - 1, parseInt(ymd[2]), parseInt(hms[0]), parseInt(hms[1]), parseInt(hms[2]))
+function setTime(date: Date, time: Date): Date {
+    const today = new Date(date.getTime())
+    today.setHours(0, 0, 0, 0)
+    today.setHours(time.getHours(), time.getMinutes(), time.getSeconds())
+    return today
 }
 
 function deleteSeconds(time: string): string {
@@ -41,10 +42,10 @@ function deleteSeconds(time: string): string {
     return `${parseInt(hms[0])}:${hms[1]}`
 }
 
-export async function schedule(week: number, variant_id: number, hall_id: number) {
+export async function schedule(week: number, variant_id: number, hall: Hall) {
     //get info about sport variant
-    const variant: { name: string, hall: number, whole: boolean, capacity: number } = await db_variant.selectVariant(variant_id)
-    const isWholeHall = variant.whole
+    const variant: Variant = await db_variant.selectVariant(variant_id)
+    const isWholeHall = variant.entire_hall
 
     //current date & time
     const date = new Date()
@@ -74,33 +75,55 @@ export async function schedule(week: number, variant_id: number, hall_id: number
         schedule[i] = {}
         schedule[i].fullDate = formattedDate.fullDate
         schedule[i].shortDate = formattedDate.shortDate
-        const av_time = db_available_time.selectAvailableTime(variant_id, cycleDate.getDay())
-        const available_time: { time: number, price: number }[] = av_time.table
-        const timetable: { time_start: string, time_end: string }[] = av_time.timetable
+
+        const av_time: {
+            timetable: { time_start: Date, time_end: Date }[]
+            table: { time: number, price: number }[]
+            add_price: number
+        } = db_available_time.selectAvailableTime(variant_id, cycleDate.getDay())
+
         // @ts-ignore
-        schedule[i].schedule = timetable
+        schedule[i].schedule = av_time.timetable.map(e => {
+            return {
+                time_start: setTime(cycleDate, e.time_start),
+                time_end: setTime(cycleDate, e.time_end)
+            }
+        })
 
         for (const time of schedule[i].schedule) {
             // @ts-ignore
             time.info = {}
             time.info.status = 'disabled'
-            time.info.isOver = isOver(date, formattedDate.fullDate, time.time_start)
+            time.info.isOver = isOver(date, time.time_start)
         }
         //get all data on current cycle date for filter
-        const events = await db_event.selectEvent(hall_id, formatDate(cycleDate).fullDate)
-        const booked = isWholeHall
-            ? await db_request.selectAcceptedRequestsByDate(hall_id, formatDate(cycleDate).fullDate)
-            : await db_request.selectAcceptedRequestsByDateWithCount(variant_id, formatDate(cycleDate).fullDate, timetable);
-        const addTime = await db_add_time.selectAddTime(hall_id, formatDate(cycleDate).fullDate)
+        const events = await db_event.selectEvents(hall, cycleDate)
+        const booked: { full_start: Date, full_end: Date }[]
+            & { session: { start: Date, end: Date }, count: number }[]
+            = isWholeHall
+            ? await db_request.selectAcceptedRequestsByDate(hall, cycleDate)
+            : await db_request.selectAcceptedRequestsByDateWithCount(
+                variant,
+                schedule[i].schedule.map(e => {
+                    return {
+                        start: e.time_start,
+                        end: e.time_end
+                    }
+                }));
+        const addTime: { start: Date, end: Date }[]
+            = await db_add_time.selectAddTime(hall, schedule[i].schedule.map(e => {
+            return {
+                start: e.time_start,
+                end: e.time_end
+            }
+        }))
 
         //begin filtering data
         for (const time of schedule[i].schedule) {
             //check time for event
             let isEvent = false;
             for (const event of events) {
-                const time_s = createDate(formattedDate.fullDate, time.time_start)
-                const time_e = createDate(formattedDate.fullDate, time.time_end)
-                if (isTimeCross(time_s, time_e, event.event_start, event.event_end)) {
+                if (isTimeCross(time.time_start, time.time_end,event.event_start, event.event_end)) {
                     time.info.status = 'event'
                     time.info.name = event.name
                     isEvent = true
@@ -114,21 +137,20 @@ export async function schedule(week: number, variant_id: number, hall_id: number
             let isBooked = false
             for (const book of booked) {
                 if (isWholeHall) {
-                    if (isTimeCross(time.time_start, time.time_end, book.req_start, book.req_end)) {
+                    if (isTimeCross(time.time_start, time.time_end, book.full_start, book.full_end)) {
                         time.info.status = 'booked'
                         isBooked = true
                         break
                     }
                 } else {
-                    if (isTimeCross(time.time_start, time.time_end, book.time_start, book.time_end)) {
-                        if (book.filled >= variant.capacity) {
+                    if (isTimeCross(time.time_start, time.time_end, book.full_start, book.full_end)) {
+                        if (book.count >= variant.capacity) {
                             time.info.status = 'overfilled'
-                            // @ts-ignore
                             time.info.capacity = variant.capacity
                             isBooked = true
                             break
                         } else {
-                            time.info.filled = book.filled
+                            time.info.filled = book.count
                         }
                     }
                 }
@@ -137,7 +159,7 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                 continue
 
             let isAvT = false;
-            for (const av_t of available_time) {
+            for (const av_t of av_time.table) {
                 if (av_t.time === schedule[i].schedule.indexOf(time)) {
                     time.price = av_t.price
                     isAvT = true
@@ -151,13 +173,12 @@ export async function schedule(week: number, variant_id: number, hall_id: number
                     }
                 }
             }
-
             if (isAvT)
                 continue
 
             if (isWholeHall) {
                 for (const addT of addTime) {
-                    if (isTimeCross(time.time_start, time.time_end, addT.time_start, addT.time_end)) {
+                    if (isTimeCross(time.time_start, time.time_end, addT.start, addT.end)) {
                         time.info.status = 'free'
                         time.price = av_time.add_price
                         break

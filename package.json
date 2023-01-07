@@ -5,11 +5,12 @@
   "main": "src/index.ts",
   "type": "commonjs",
   "scripts": {
-    "start": "node compiled-js/index.js",
-    "dev": "nodemon compiled-js/index.js",
+    "start": "node compiled-js/src/index.js",
+    "dev": "nodemon compiled-js/src/index.js",
     "start-ts": "tsc -w",
     "build": "tsc --project tsconfig.json",
-    "studio": "npx prisma studio"
+    "studio": "npx prisma studio",
+    "test-file": "node compiled-js/src/tests/test.js"
   },
   "keywords": [],
   "author": "Maxim Chuikov Alexandrovich",
@@ -18,6 +19,7 @@
     "@prisma/client": "^4.6.1",
     "axios": "^0.27.2",
     "cors": "^2.8.5",
+    "curl": "^0.1.4",
     "dotenv": "^16.0.2",
     "express": "^4.18.1",
     "express-validator": "^6.14.2",

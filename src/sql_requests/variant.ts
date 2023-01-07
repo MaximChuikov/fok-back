@@ -1,21 +1,19 @@
-import {pool} from '../database';
+import {PrismaClient, Hall, Variant} from '@prisma/client'
+const prisma = new PrismaClient()
 
-class Variant {
-    async selectVariant(variant_id: number): Promise<{name: string, hall:number, whole: boolean, capacity: number}> {
-        return await pool.query(`
-            SELECT name, hall_id, whole, capacity
-            FROM public.variant
-            WHERE variant_id = ${variant_id};
-        `).then((r: { rows: any; }) => r.rows[0])
+class DbVariant {
+    async selectVariant(variant_id: number): Promise<Variant> {
+        return await prisma.variant.findUnique({
+            where: {variant_id: variant_id}
+        })
     }
 
-    async selectHall(variant_id: number): Promise<{hall_id: number}> {
-        return await pool.query(`
-            SELECT hall_id
-            FROM public.variant
-            WHERE variant_id = ${variant_id};
-        `).then((r: { rows: any; }) => r.rows[0].hall_id)
+    async selectHall(variant_id: number): Promise<Hall> {
+        return await prisma.variant.findUnique({
+            where: {variant_id: variant_id},
+            select: {hall: true}
+        }).then(r => r.hall)
     }
 }
 
-module.exports = new Variant()
+module.exports = new DbVariant()

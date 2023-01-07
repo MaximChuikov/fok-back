@@ -14,10 +14,8 @@ enum Hall {
 
 model Add_time {
   time_id    Int      @id @default(autoincrement())
-  hall_id    Int
-  time_date  DateTime @db.Date
-  time_start DateTime @db.Time(6)
-  time_end   DateTime @db.Time(6)
+  full_start DateTime @db.Timestamp(6)
+  full_end   DateTime @db.Timestamp(6)
   hall       Hall
 }
 
@@ -54,13 +52,12 @@ enum Status {
 }
 
 model Requested_time {
-  request_id  Int
-  req_date    DateTime @db.Date
-  req_start   DateTime @db.Time(6)
-  req_end     DateTime @db.Time(6)
-  req_price   Int      @default(0)
-  req_time_id Int      @id @default(autoincrement())
-  request     Request  @relation(fields: [request_id], references: [request_id], onDelete: Cascade)
+  time_id Int           @id @default(autoincrement())
+  request_id   Int
+  full_start   DateTime @db.Timestamp(6)
+  full_end     DateTime @db.Timestamp(6)
+  price        Int      @default(0)
+  request      Request  @relation(fields: [request_id], references: [request_id], onDelete: Cascade)
 }
 
 model Variant {

@@ -1,38 +1,53 @@
-import {pool} from '../database'
-import '../types/types'
+import {Hall, Reason, PrismaClient, Event as PrismaEvent} from '@prisma/client'
+const prisma = new PrismaClient()
 
 class Event {
-    async addNewEvent(time: Timestamp, name: string, hall_id: number): Promise<void> {
-        await pool.query(`
-                INSERT INTO public.event(
-                event_start, event_end, name, hall_id)
-                VALUES ('${time.start}', '${time.end}', '${name}', ${hall_id})
-                RETURNING event_id
-        `)
+    async addNewEvent(start: Date, end: Date, name: string, hall: Hall, reason: Reason): Promise<void> {
+        await prisma.event.create({
+            data: {
+                name: name,
+                hall: hall,
+                full_start: start,
+                full_end: end,
+                reason: reason
+            }
+        })
     }
 
     async deleteEvent(event_id: number): Promise<void> {
-        await pool.query(`
-            DELETE FROM public.event
-            WHERE event_id = ${event_id};
-        `)
+        await prisma.event.delete({
+            where: {
+                event_id: event_id
+            }
+        })
     }
 
-    async selectEvent(hall_id: number, date: string): Promise<{ event_id: number, event_start: Date, event_end: Date, name: string }[]> {
-        return await pool.query(`
-            SELECT event_id, event_start, event_end, name
-            FROM public.event
-            WHERE TO_CHAR(event_start, 'yyyy-mm-dd') <= '${date}'
-            AND TO_CHAR(event_end, 'yyyy-mm-dd') >= '${date}'
-            AND hall_id = ${hall_id};
-        `).then((r: { rows: any }) => r.rows)
+    /*
+        @param date Find 0:00 and 23:59, and finding requests
+     */
+    async selectEvents(hall: Hall, date: Date): Promise<PrismaEvent[]> {
+        const morning = new Date(date.getTime())
+        morning.setHours(0, 0, 0)
+        const evening = new Date(date.getDate())
+        evening.setHours(23, 59, 59)
+
+        return  await prisma.event.findMany({
+            where: {
+                AND: [
+                    {full_start: {lte: evening}},
+                    {full_end: {gte: morning}}
+                ]
+            }
+        })
     }
-    async selectAllEvents(hall_id: number): Promise<{ event_id: number, event_start: Date, event_end: Date, name: string }[]> {
-        return await pool.query(`
-            SELECT event_id, event_start, event_end, name
-            FROM public.event
-            WHERE hall_id = ${hall_id};
-        `).then((r: { rows: any }) => r.rows)
+
+    async selectAllEvents(hall: Hall): Promise<PrismaEvent[]> {
+        return await prisma.event.findMany({
+            where: {
+                hall: hall
+            }
+        })
+
     }
 }
 

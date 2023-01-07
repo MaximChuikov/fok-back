@@ -1,21 +1,38 @@
-import {pool} from '../database'
+import {Hall, PrismaClient} from '@prisma/client'
+const prisma = new PrismaClient()
 
 class AdditionalTime {
-    async createAddTime(hall_id: number, date: string, start: string, end: string): Promise<void> {
-        await pool.query(`
-                INSERT INTO public.additional_time(
-                hall_id, time_date, time_start, time_end)
-                VALUES (${hall_id}, '${date}', '${start}', '${end}');
-            `).then()
+    async createAddTime(hall: Hall, start: Date, end: Date): Promise<void> {
+        await prisma.add_time.create({
+            data: {
+                hall: hall,
+                full_start: start,
+                full_end: end
+            }
+        })
     }
 
-    async selectAddTime(hall_id: number, dateString: string): Promise<Time[]> {
-        return await pool.query(`
-                SELECT time_start, time_end
-                FROM public.additional_time
-                WHERE hall_id = ${hall_id}
-                AND time_date = '${dateString}';
-            `).then((r: { rows: Time[] }) => r.rows)
+    /*
+        @param date Find 0:00 and 23:59, and finding add time
+        @return time from sessions where is add_time
+     */
+    async selectAddTime(hall: Hall, settlementSessions: {start: Date, end: Date}[]): Promise<{ start: Date, end: Date }[]> {
+        let result: {start: Date, end: Date}[] = []
+        for (const x of settlementSessions) {
+            const allAddTimes = await prisma.add_time.findMany({
+                where: {
+                    AND: [
+                        {full_start: {lt: x.end}},
+                        {full_end: {gt: x.start}},
+                        {hall: hall}
+                    ]
+                }
+            })
+            if (allAddTimes.length >= 1) {
+                result.push(x)
+            }
+        }
+        return result
     }
 }
 module.exports = new AdditionalTime()

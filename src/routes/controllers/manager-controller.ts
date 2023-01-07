@@ -1,5 +1,6 @@
 import {Request, Response} from 'express';
 import {formatDate} from "../../service/day-of-week";
+import {Status} from "@prisma/client";
 const db_variant = require("../../sql_requests/variant")
 const day_of_week = require("../../service/day-of-week")
 const vk_methods = require('../../vk_methods/group')
@@ -57,7 +58,7 @@ class ManagerController {
             const {variant_id, requested_time} = await db_request.selectRequest(request_id)
             const variant_info = await db_variant.selectVariant(variant_id)
             if (variant_info.whole) {
-                const acceptedRent = await db_request.selectAllAcceptedRequests(variant_id)
+                const acceptedRent = await db_request.selectRequests(variant_id, Status.accepted)
                 if (day_of_week.findCrossing(requested_time, acceptedRent))
                     return res.status(409).send('Время уже занято другим человеком');
             } else {
@@ -113,8 +114,8 @@ class ManagerController {
             const start: string = req.body.start
             const end: string = req.body.end
             const date: string = req.body.date
-            const hall_id: number = req.body.hall_id
-            await db_addTime.createAddTime(hall_id, date, start, end)
+            const hall: string = req.body.hall
+            await db_addTime.createAddTime(hall, date, start, end)
             res.send('ok')
         } catch (e) {
             res.status(500).send(e.message)

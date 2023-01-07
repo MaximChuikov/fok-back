@@ -1,45 +1,20 @@
-const timetable_for_all = [
-    {
-        time_start: '8:00:00',
-        time_end: '9:00:00',
-    },
-    {
-        time_start: '9:00:00',
-        time_end: '10:00:00',
-    },
-    {
-        time_start: '10:00:00',
-        time_end: '11:00:00',
-    },
-    {
-        time_start: '11:00:00',
-        time_end: '12:00:00',
-    },
-    {
-        time_start: '12:00:00',
-        time_end: '13:00:00',
-    },
-    {
-        time_start: '15:00:00',
-        time_end: '16:00:00',
-    },
-    {
-        time_start: '16:00:00',
-        time_end: '17:00:00',
-    },
-    {
-        time_start: '17:00:00',
-        time_end: '18:00:00',
-    },
-    {
-        time_start: '18:00:00',
-        time_end: '19:00:00',
-    },
-    {
-        time_start: '19:00:00',
-        time_end: '20:00:00',
-    }
-]
+function fill_timetable(hours: number[]): { time_start: Date, time_end: Date }[] {
+    const zeroDate = () => new Date(0)
+    return hours.map(e => {
+        const start = zeroDate()
+        start.setHours(e)
+        const end = zeroDate()
+        end.setHours(e + 1)
+        return {
+            time_start: start,
+            time_end: end
+        }
+    })
+}
+
+const timetable_for_all = fill_timetable([
+    8, 9, 10, 11, 12, 15, 16, 17, 18, 19
+])
 
 const price_for_all = timetable_for_all.map((e, index) => {
     return {
@@ -49,64 +24,15 @@ const price_for_all = timetable_for_all.map((e, index) => {
 })
 
 
-const timetable_for_gym = [
-    {
-        time_start: '8:00:00',
-        time_end: '9:00:00',
-    },
-    {
-        time_start: '9:00:00',
-        time_end: '10:00:00',
-    },
-    {
-        time_start: '10:00:00',
-        time_end: '11:00:00',
-    },
-    {
-        time_start: '11:00:00',
-        time_end: '12:00:00',
-    },
-    {
-        time_start: '12:00:00',
-        time_end: '13:00:00',
-    },
-    {
-        time_start: '13:00:00',
-        time_end: '14:00:00',
-    },
-    {
-        time_start: '14:00:00',
-        time_end: '15:00:00',
-    },
-    {
-        time_start: '15:00:00',
-        time_end: '16:00:00',
-    },
-    {
-        time_start: '16:00:00',
-        time_end: '17:00:00',
-    },
-    {
-        time_start: '17:00:00',
-        time_end: '18:00:00',
-    },
-    {
-        time_start: '18:00:00',
-        time_end: '19:00:00',
-    },
-    {
-        time_start: '19:00:00',
-        time_end: '20:00:00',
-    }
-]
+const timetable_for_gym = fill_timetable([
+    8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+])
 const price_for_gym = timetable_for_gym.map((e, index) => {
     return {
         time: index,
         price: 200
     }
 })
-
-
 
 
 const schedule = [
@@ -130,16 +56,9 @@ const schedule = [
     {
         //футбол случ. состав
         variant_id: 2,
-        timetable: [
-            {
-                time_start: '13:00:00',
-                time_end: '14:00:00',
-            },
-            {
-                time_start: '14:00:00',
-                time_end: '15:00:00',
-            }
-        ],
+        timetable: fill_timetable([
+            13, 14
+        ]),
         time_price: [
             [],
             [],
@@ -177,16 +96,9 @@ const schedule = [
     {
         //баскет случ. состав
         variant_id: 4,
-        timetable: [
-            {
-                time_start: '13:00:00',
-                time_end: '14:00:00',
-            },
-            {
-                time_start: '14:00:00',
-                time_end: '15:00:00',
-            }
-        ],
+        timetable: fill_timetable([
+            13, 14
+        ]),
         time_price: [
             [
                 {
@@ -222,26 +134,24 @@ const schedule = [
     }
 ];
 
-
 class AvailableTime {
     selectAvailableTime(variant_id: number, day_of_week: number): {
-        timetable: {time_start: string, time_end: string}[]
-        table: {time: number, price: number}[]
+        timetable: { time_start: Date, time_end: Date }[]
+        table: { time: number, price: number }[]
+        add_price: number
     } {
         const sch = schedule.find(e => e.variant_id == variant_id)
-        return JSON.parse(JSON.stringify({
-            // @ts-ignore
-            timetable: sch.timetable,
-            add_price: sch.add_price,
-            table: sch.time_price[day_of_week]
-        }))
+        return {
+            timetable: sch.timetable.filter(() => true),
+            table: sch.time_price[day_of_week].filter(() => true),
+            add_price: sch.add_price
+        }
     }
 
-    selectTimetable(variant_id: number): {time_start: string, time_end: string}[] {
+    selectTimetable(variant_id: number): { time_start: Date, time_end: Date }[] {
         const sch = schedule.find(e => e.variant_id == variant_id)
-        return JSON.parse(JSON.stringify(sch.timetable))
+        return sch.timetable.filter(() => true)
     }
 }
-
 
 module.exports = new AvailableTime()
