@@ -5,11 +5,10 @@
   "main": "src/index.ts",
   "type": "commonjs",
   "scripts": {
-    "start": "API_URL=https://api.фокбулатова.рф CLIENT_URL=https://фокбулатова.рф node dist/src/index.js",
+    "start": "node dist/src/index.js",
     "dev": "nodemon ./src/index.ts",
     "build": "tsc --project tsconfig.json",
-    "studio": "npx prisma studio",
-    "test-file": "node compiled-js/src/tests/test.js"
+    "studio": "npx prisma studio"
   },
   "keywords": [],
   "author": "Maxim Chuikov Alexandrovich",
