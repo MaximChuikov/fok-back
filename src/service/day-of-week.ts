@@ -1,222 +1,149 @@
-// const db_event = require('../sql_requests/event')
-// const db_available_time = require('../sql_requests/available_time')
-// const db_request = require('../sql_requests/request')
-// const db_add_time = require('../sql_requests/additional_time')
-// const db_variant = require('../sql_requests/variant')
-// import {PrismaClient, Hall, Variant} from '@prisma/client'
-//
-// const prisma = new PrismaClient()
-//
-// const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
-//
-// // 9 => 09
-// function pad2(num: number): string {
-//     return num.toString().padStart(2, '0');
-// }
-//
-// export function formatDate(date: Date): { fullDate: string, shortDate: string } {
-//     return {
-//         fullDate: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
-//         shortDate: `${date.getDate()} ${shortMonth[date.getMonth()]}`
-//     }
-// }
-//
-// function isOver(currentDate: Date, checkingDate: Date): boolean {
-//     return checkingDate > currentDate
-// }
-//
-// function isTimeCross(firstStart: string | Date, firstEnd: string | Date,
-//                      secondStart: string | Date, secondEnd: string | Date): boolean {
-//     return firstEnd > secondStart && firstStart < secondEnd
-// }
-//
-// function setTime(date: Date, time: Date): Date {
-//     const today = new Date(date.getTime())
-//     today.setHours(0, 0, 0, 0)
-//     today.setHours(time.getHours(), time.getMinutes(), time.getSeconds())
-//     return today
-// }
-//
-// function deleteSeconds(time: string): string {
-//     const hms = time.split(':')
-//     return `${parseInt(hms[0])}:${hms[1]}`
-// }
-//
-// export async function schedule(week: number, variant_id: number, hall: Hall) {
-//     //get info about sport variant
-//     const variant: Variant = await db_variant.selectVariant(variant_id)
-//     const isWholeHall = variant.entire_hall
-//
-//     //current date & time
-//     const date = new Date()
-//
-//     //set need week
-//     const weekDate = new Date(date.getTime())
-//     weekDate.setDate(weekDate.getDate() + week * 7)
-//
-//     //monday date of need week
-//     const mondayDate = new Date(weekDate.getTime())
-//     mondayDate.setDate(mondayDate.getDate() - (mondayDate.getDay() === 0 ? 6 : mondayDate.getDay() - 1))
-//
-//     //sunday date of need week
-//     const sundayDate = new Date(mondayDate.getTime())
-//     sundayDate.setDate(sundayDate.getDate() + 6)
-//
-//     //current date in cycle below
-//     const cycleDate = new Date(mondayDate.getTime())
-//
-//     let schedule = new Array<Schedule>()
-//     for (let i = 0; i < 7; i++) {
-//         //date for response and requests
-//         const formattedDate = formatDate(cycleDate)
-//         //primary response formatting
-//
-//         // @ts-ignore
-//         schedule[i] = {}
-//         schedule[i].fullDate = formattedDate.fullDate
-//         schedule[i].shortDate = formattedDate.shortDate
-//
-//         const av_time: {
-//             timetable: { time_start: Date, time_end: Date }[]
-//             table: { time: number, price: number }[]
-//             add_price: number
-//         } = db_available_time.selectAvailableTime(variant_id, cycleDate.getDay())
-//
-//         // @ts-ignore
-//         schedule[i].schedule = av_time.timetable.map(e => {
-//             return {
-//                 time_start: setTime(cycleDate, e.time_start),
-//                 time_end: setTime(cycleDate, e.time_end)
-//             }
-//         })
-//
-//         for (const time of schedule[i].schedule) {
-//             // @ts-ignore
-//             time.info = {}
-//             time.info.status = 'disabled'
-//             time.info.isOver = isOver(date, time.time_start)
-//         }
-//         //get all data on current cycle date for filter
-//         const events = await db_event.selectEvents(hall, cycleDate)
-//         const booked: { full_start: Date, full_end: Date }[]
-//             & { session: { start: Date, end: Date }, count: number }[]
-//             = isWholeHall
-//             ? await db_request.selectAcceptedRequestsByDate(hall, cycleDate)
-//             : await db_request.selectAcceptedRequestsByDateWithCount(
-//                 variant,
-//                 schedule[i].schedule.map(e => {
-//                     return {
-//                         start: e.time_start,
-//                         end: e.time_end
-//                     }
-//                 }));
-//         const addTime: { start: Date, end: Date }[]
-//             = await db_add_time.selectAddTime(hall, schedule[i].schedule.map(e => {
-//             return {
-//                 start: e.time_start,
-//                 end: e.time_end
-//             }
-//         }))
-//
-//         //begin filtering data
-//         for (const time of schedule[i].schedule) {
-//             //check time for event
-//             let isEvent = false;
-//             for (const event of events) {
-//                 if (isTimeCross(time.time_start, time.time_end,event.event_start, event.event_end)) {
-//                     time.info.status = 'event'
-//                     time.info.name = event.name
-//                     isEvent = true
-//                     break
-//                 }
-//             }
-//             if (isEvent)
-//                 continue
-//
-//             //check time for booking
-//             let isBooked = false
-//             for (const book of booked) {
-//                 if (isWholeHall) {
-//                     if (isTimeCross(time.time_start, time.time_end, book.full_start, book.full_end)) {
-//                         time.info.status = 'booked'
-//                         isBooked = true
-//                         break
-//                     }
-//                 } else {
-//                     if (isTimeCross(time.time_start, time.time_end, book.full_start, book.full_end)) {
-//                         if (book.count >= variant.capacity) {
-//                             time.info.status = 'overfilled'
-//                             time.info.capacity = variant.capacity
-//                             isBooked = true
-//                             break
-//                         } else {
-//                             time.info.filled = book.count
-//                         }
-//                     }
-//                 }
-//             }
-//             if (isBooked)
-//                 continue
-//
-//             let isAvT = false;
-//             for (const av_t of av_time.table) {
-//                 if (av_t.time === schedule[i].schedule.indexOf(time)) {
-//                     time.price = av_t.price
-//                     isAvT = true
-//                     if (isWholeHall) {
-//                         time.info.status = 'free'
-//                         break
-//                     } else {
-//                         time.info.status = 'filled'
-//                         time.info.capacity = variant.capacity
-//                         break
-//                     }
-//                 }
-//             }
-//             if (isAvT)
-//                 continue
-//
-//             if (isWholeHall) {
-//                 for (const addT of addTime) {
-//                     if (isTimeCross(time.time_start, time.time_end, addT.start, addT.end)) {
-//                         time.info.status = 'free'
-//                         time.price = av_time.add_price
-//                         break
-//                     }
-//                 }
-//             }
-//         }
-//         //next day in cycle
-//         cycleDate.setDate(cycleDate.getDate() + 1)
-//     }
-//
-//     const timetable = db_available_time.selectTimetable(variant_id)
-//     timetable.forEach(time => {
-//         time.time_start = deleteSeconds(time.time_start)
-//         time.time_end = deleteSeconds(time.time_end)
-//     })
-//
-//     return {
-//         timetable: timetable,
-//         schedule: schedule
-//     }
-// }
-//
-// export function findCrossing(first: DateTime[], second: DateTime[]) {
-//     for (const sec of second) {
-//         const s = JSON.stringify({
-//             //@ts-ignore
-//             date: formatDate(sec.req_date).fullDate,
-//             //@ts-ignore
-//             start: deleteSeconds(sec.req_start),
-//             //@ts-ignore
-//             end: deleteSeconds(sec.req_end)
-//         })
-//         for (const ft of first) {
-//             const o = JSON.stringify({date: ft.date, start: deleteSeconds(ft.start), end: deleteSeconds(ft.end)})
-//             if (o === s)
-//                 return true
-//         }
-//     }
-//     return false
-// }
+import {Schedule} from "../types/types";
+
+const available_timeDb = require('../sql_requests/available_time')
+const bookDb = require('../sql_requests/book')
+
+const shortMonth = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+
+// 9 => 09
+function pad2(num: number): string {
+    return num.toString().padStart(2, '0');
+}
+
+export function formatDate(date: Date): { fullDate: string, shortDate: string } {
+    return {
+        fullDate: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
+        shortDate: `${date.getDate()} ${shortMonth[date.getMonth()]}`
+    }
+}
+
+function isOver(currentDate: Date, checkingDate: Date): boolean {
+    return checkingDate > currentDate
+}
+
+function isTimeCross(firstStart: Date, firstEnd: Date,
+                     secondStart: Date, secondEnd: Date): boolean {
+    return firstEnd > secondStart && firstStart < secondEnd
+}
+
+function setTime(date: Date, time: Date): Date {
+    const today = new Date(date.getTime())
+    today.setHours(0, 0, 0, 0)
+    today.setHours(time.getHours(), time.getMinutes(), time.getSeconds())
+    return today
+}
+
+function deleteSeconds(time: string): string {
+    const hms = time.split(':')
+    return `${parseInt(hms[0])}:${hms[1]}`
+}
+
+export async function schedule(week: number) {
+    //current date & time
+    const date = new Date()
+
+    //set need week
+    const weekDate = new Date(date.getTime())
+    weekDate.setDate(weekDate.getDate() + week * 7)
+
+    //monday date of need week
+    const mondayDate = new Date(weekDate.getTime())
+    mondayDate.setDate(mondayDate.getDate() - (mondayDate.getDay() === 0 ? 6 : mondayDate.getDay() - 1))
+
+    //sunday date of need week
+    const sundayDate = new Date(mondayDate.getTime())
+    sundayDate.setDate(sundayDate.getDate() + 6)
+
+    //current date in cycle below
+    const cycleDate = new Date(mondayDate.getTime())
+
+    let schedule = new Array<Schedule>()
+    for (let i = 0; i < 7; i++) {
+        //date for response and requests
+        const formattedDate = formatDate(cycleDate)
+        //primary response formatting
+
+        // @ts-ignore
+        schedule[i] = {}
+        schedule[i].shortDate = formattedDate.shortDate
+
+        const av_time: {
+            timetable: { time_start: Date, time_end: Date }[]
+            table: { time: number, price: number }[]
+            add_price: number
+        } = available_timeDb.selectAvailableTime(cycleDate.getDay())
+
+        // @ts-ignore
+        schedule[i].schedule = av_time.timetable.map(e => {
+            return {
+                time_start: setTime(cycleDate, e.time_start),
+                time_end: setTime(cycleDate, e.time_end)
+            }
+        })
+
+        for (const time of schedule[i].schedule) {
+            // @ts-ignore
+            time.info = {}
+            time.info.status = 'disabled'
+            time.info.isOver = isOver(date, time.time_start)
+        }
+        //get all data on current cycle date for filter
+        const booked: {
+            start: Date
+            count: any
+            end: Date
+        }[] = []
+
+        for (const book of schedule[i].schedule) {
+            booked.push({
+                start: book.time_start,
+                end: book.time_end,
+                count: await bookDb.bookedCount(book.time_start, book.time_end)
+            })
+        }
+
+        //begin filtering data
+        for (const time of schedule[i].schedule) {
+            //check time for booking
+            let isBooked = false
+            for (const book of booked) {
+                if (isTimeCross(time.time_start, time.time_end, book.start, book.end)) {
+                    if (book.count >= 15) {
+                        time.info.status = 'overfilled'
+                        time.info.capacity = 15
+                        isBooked = true
+                        break
+                    } else {
+                        time.info.filled = book.count
+                    }
+                }
+            }
+            if (isBooked)
+                continue
+
+            for (const av_t of av_time.table) {
+                if (av_t.time === schedule[i].schedule.indexOf(time)) {
+                    time.price = av_t.price
+                    time.info.status = 'filled'
+                    time.info.capacity = 15
+                    break
+                }
+            }
+
+
+        }
+        //next day in cycle
+        cycleDate.setDate(cycleDate.getDate() + 1)
+    }
+
+    const timetable = available_timeDb.selectTimetable()
+    timetable.forEach(time => {
+        time.time_start = deleteSeconds(time.time_start)
+        time.time_end = deleteSeconds(time.time_end)
+    })
+
+    return {
+        timetable: timetable,
+        schedule: schedule
+    }
+}

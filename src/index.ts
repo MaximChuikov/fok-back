@@ -3,8 +3,18 @@ import cors from 'cors'
 import cookieParser from "cookie-parser";
 import errorMiddleware from './middlewares/error-middleware'
 import router from './routes/api-routes'
+import UserDto from "./dtos/user-dto";
 
 const PORT = 8080;
+
+// userDto variable in request after auth middleware only
+declare global {
+    namespace Express {
+        interface Request {
+            user: UserDto
+        }
+    }
+}
 
 const app = express();
 app.use(express.json());

@@ -18,9 +18,6 @@ class DbEvent {
         })
     }
 
-    /*
-        @param date Find 0:00 and 23:59, and finding requests
-     */
     async selectNearestEvents(): Promise<Event[]> {
         const now = new Date()
         const oneWeekAhead = new Date(now.getTime())
@@ -53,4 +50,4 @@ class DbEvent {
     }
 }
 
-module.exports = new DbEvent()
+export default new DbEvent()

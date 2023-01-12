@@ -1,6 +1,7 @@
-export class Schedule {
-    fullDate: string = ""
-    shortDate: string = ""
+import {Prisma} from "prisma";
+
+export type Schedule = {
+    shortDate: string
     schedule: {
         price: number
         time_start: Date
@@ -8,11 +9,10 @@ export class Schedule {
         info: {
             status: string
             isOver: boolean
-            name?: string
-            filled?: number
-            capacity?: number
+            filled: number
+            capacity: number
         }
-    }[] = []
+    }[]
 }
 
 export type EventData = {
@@ -30,3 +30,25 @@ export type UserRegistrationData = {
     user_surname: string,
     phone_number: string
 }
+
+export type BookRegistration = {
+    user_registered: boolean
+    user_id: number | null
+    non_reg_user_name: string | null
+    start_time: Date | null
+    end_time: Date | null
+    booking_list: {
+        start_time: Date
+        end_time: Date
+    }[]
+    payment_data: Prisma.JsonValue
+}
+
+// book_id: number
+// user_registered: boolean
+// user_id: number | null
+// non_reg_user_name: string | null
+// start_time: Date
+// end_time: Date
+// status: BookStatus
+// payment_data: Prisma.JsonValue

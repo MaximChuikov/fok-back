@@ -1,3 +1,4 @@
 .env
 compiled-js
 prisma/migrations
+tests

@@ -29,4 +29,4 @@ user_router.delete('/my-rent',
     check,
     user.deleteMyRequest)
 
-module.exports = user_router
+export default user_router

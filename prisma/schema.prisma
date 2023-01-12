@@ -8,10 +8,11 @@ datasource db {
 }
 
 model User {
-  email              String  @id @unique
+  user_id            Int     @id @unique @default(autoincrement())
+  email              String  @unique
   password_hash      String
   is_activated_email Boolean @default(false)
-  activation_link    String
+  activation_link    String  @unique
   user_name          String
   user_surname       String
   phone_number       String
@@ -21,8 +22,8 @@ model User {
 }
 
 model Token {
-  user_email    String @id @unique
-  user          User   @relation(fields: [user_email], references: [email])
+  user_id       Int    @id @unique
+  user          User   @relation(fields: [user_id], references: [user_id])
   refresh_token String
 }
 
@@ -37,8 +38,8 @@ model Event {
 model Book {
   book_id           Int        @id @unique @default(autoincrement())
   user_registered   Boolean    @default(true)
-  user_email        String?
-  user              User?      @relation(fields: [user_email], references: [email])
+  user_id           Int?
+  user              User?      @relation(fields: [user_id], references: [user_id])
   non_reg_user_name String?
   start_time        DateTime
   end_time          DateTime

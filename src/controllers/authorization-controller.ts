@@ -2,6 +2,7 @@ import {Request, Response, NextFunction} from 'express';
 import {validationResult} from "express-validator";
 import ApiError from '../exceptions/api-error'
 import userService from '../service/user-service'
+import eventDb from '../sql_requests/event'
 
 class AuthorizationController {
     async registration(req: Request, res: Response, next: NextFunction) {

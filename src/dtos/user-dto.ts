@@ -1,17 +1,13 @@
-import {User} from "@prisma/client"
+import {User, Role} from "@prisma/client"
 
 export default class UserDto {
-    email: string
-    user_name: string
-    user_surname: string
-    phone_number: string
-    is_activated_email: boolean
+    u_id: number
+    active: boolean
+    role: Role
 
     constructor(model: User) {
-        this.email = model.email
-        this.user_name = model.user_name
-        this.user_surname = model.user_surname
-        this.phone_number = model.phone_number
-        this.is_activated_email = model.is_activated_email
+        this.u_id = model.user_id
+        this.active = model.is_activated_email
+        this.role = model.role
     }
 }

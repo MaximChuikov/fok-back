@@ -17,13 +17,12 @@ class UserService {
         userData.password_hash = await bcrypt.hash(password, 3);
         userData.activation_link = v4();
 
-
-        const user = await userDb.addUser(userData)
         await mailService.sendActivationMail(userData.email, `${process.env.API_URL}/api/activate/${userData.activation_link}`);
+        const user = await userDb.addUser(userData)
 
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
-        await tokenService.saveToken(user.email, tokens.refreshToken);
+        await tokenService.saveToken(user.user_id, tokens.refreshToken);
         return {...tokens, user: userDto}
     }
 
@@ -47,8 +46,8 @@ class UserService {
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
 
-        await tokenService.saveToken(user.email, tokens.refreshToken);
-        return {...tokens, user: userDto}
+        await tokenService.saveToken(user.user_id, tokens.refreshToken);
+        return {...tokens}
     }
 
     async logout(refreshToken) {
@@ -64,11 +63,11 @@ class UserService {
         if (!userData || !tokenFromDb) {
             throw ApiError.UnauthorizedError();
         }
-        const user = await userDb.findUser(userData.email);
+        const user = await userDb.findUserById(userData.u_id);
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
 
-        await tokenService.saveToken(user.email, tokens.refreshToken);
+        await tokenService.saveToken(user.user_id, tokens.refreshToken);
         return {...tokens, user: userDto}
     }
 }

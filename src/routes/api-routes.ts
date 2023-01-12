@@ -1,25 +1,46 @@
 import {Router} from "express"
-import {body} from 'express-validator'
+import {body, query} from 'express-validator'
 import {check} from './sender-invalid-req-error'
+
 const router = Router()
 
-// const user_router = require('./user')
-// const manager_router = require('./manager')
-import userController from '../controllers/authorization-controller'
+import authController from '../controllers/authorization-controller'
+import authMid from '../middlewares/auth-middleware'
+import roleAccess from "../middlewares/roleAccess";
+import eventController from "../controllers/eventController";
+import bookController from "../controllers/book-controller";
 
-
+// Auth
 router.post('/registration',
     body('email').isEmail(),
     body('password').isLength({min: 3, max: 32}),
     check,
-    userController.registration
+    authController.registration
 );
-router.post('/login', userController.login);
-router.post('/logout', userController.logout);
-router.get('/activate/:link', userController.activate);
-router.get('/refresh', userController.refresh);
+router.post('/login',
+    body('email').isEmail(),
+    body('password').isString(),
+    check,
+    check, authController.login);
+router.post('/logout', authController.logout);
+router.get('/activate/:link', authController.activate);
+router.get('/refresh', authController.refresh);
 
-// router.use('/user', user_router)
+// Events
+router.get('/archive-events',
+    query('from').isDate(),
+    query('to').isDate(),
+    check,
+    eventController.selectArchiveEvents)
+
+router.get('/nearest-events', authMid, roleAccess.managerAccess, eventController.selectNearestEvents)
+router.post('/event', authMid, roleAccess.managerAccess, eventController.addEvent)
+router.delete('/event', authMid, roleAccess.managerAccess, eventController.deleteEvent)
+router.get('/test', bookController.getTable)
+
+
+
+
 // router.use('/manager', manager_router)
 
 

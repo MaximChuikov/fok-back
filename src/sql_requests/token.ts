@@ -2,19 +2,19 @@ import {PrismaClient, Token} from '@prisma/client'
 const prisma = new PrismaClient()
 
 class DbToken {
-    async saveToken(email: string, refresh_token: string): Promise<Token> {
-        const tokenData = await prisma.token.findFirst({where: {user_email: email}})
+    async saveToken(user_id: number, refresh_token: string): Promise<Token> {
+        const tokenData = await prisma.token.findUnique({where: {user_id: user_id}})
         if (tokenData) {
             return await prisma.token.update({
-                where: {user_email: email},
+                where: {user_id: user_id},
                 data: {refresh_token: refresh_token}
             })
         }
         else {
             return await prisma.token.create({
                 data: {
-                    refresh_token: refresh_token,
-                    user_email: email
+                    user_id: user_id,
+                    refresh_token: refresh_token
                 }
             })
         }
