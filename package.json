@@ -5,9 +5,8 @@
   "main": "src/index.ts",
   "type": "commonjs",
   "scripts": {
-    "start": "API_URL=http://localhost:8080 node compiled-js/src/index.js",
+    "start": "API_URL=https://api.фокбулатова.рф CLIENT_URL=https://фокбулатова.рф node dist/src/index.js",
     "dev": "nodemon ./src/index.ts",
-    "start-ts": "tsc -w",
     "build": "tsc --project tsconfig.json",
     "studio": "npx prisma studio",
     "test-file": "node compiled-js/src/tests/test.js"
