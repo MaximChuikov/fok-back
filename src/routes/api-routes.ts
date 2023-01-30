@@ -40,8 +40,4 @@ router.get('/test', bookController.getTable)
 
 
 
-
-// router.use('/manager', manager_router)
-
-
 export default router
