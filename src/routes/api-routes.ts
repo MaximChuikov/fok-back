@@ -33,7 +33,7 @@ router.get('/archive-events',
     check,
     eventController.selectArchiveEvents)
 
-router.get('/nearest-events', authMid, roleAccess.managerAccess, eventController.selectNearestEvents)
+router.get('/nearest-events', eventController.selectNearestEvents)
 router.post('/event', authMid, roleAccess.managerAccess, eventController.addEvent)
 router.delete('/event', authMid, roleAccess.managerAccess, eventController.deleteEvent)
 router.get('/test', bookController.getTable)
