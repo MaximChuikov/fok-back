@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: process.env.CLIENT_URL
+    origin: "https://фокбулатова.рф"
 }));
 app.use('/api', router);
 app.use(errorMiddleware)

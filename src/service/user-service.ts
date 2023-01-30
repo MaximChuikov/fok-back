@@ -17,7 +17,7 @@ class UserService {
         userData.password_hash = await bcrypt.hash(password, 3);
         userData.activation_link = v4();
 
-        await mailService.sendActivationMail(userData.email, `${process.env.API_URL}/api/activate/${userData.activation_link}`);
+        await mailService.sendActivationMail(userData.email, `https://фокбулатова.рф/api/activate/${userData.activation_link}`);
         const user = await userDb.addUser(userData)
 
         const userDto = new UserDto(user);

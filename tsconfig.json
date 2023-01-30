@@ -1,8 +1,5 @@
 {
   "compilerOptions": {
-//    "forceConsistentCasingInFileNames": true,
-//    "useUnknownInCatchVariables": false,
-//    "skipLibCheck": true,
     "target": "es6",
     "module": "commonjs",
     "outDir": "dist",
