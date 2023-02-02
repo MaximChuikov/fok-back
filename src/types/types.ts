@@ -1,4 +1,4 @@
-import {Prisma} from "prisma";
+import {Prisma, Event} from "prisma";
 
 export type Schedule = {
     shortDate: string
@@ -44,11 +44,7 @@ export type BookRegistration = {
     payment_data: Prisma.JsonValue
 }
 
-// book_id: number
-// user_registered: boolean
-// user_id: number | null
-// non_reg_user_name: string | null
-// start_time: Date
-// end_time: Date
-// status: BookStatus
-// payment_data: Prisma.JsonValue
+export type FutureEvents = {
+    title: string,
+    events: Event[]
+}[]

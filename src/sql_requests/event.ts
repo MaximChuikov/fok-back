@@ -1,5 +1,6 @@
 import {PrismaClient, Event} from '@prisma/client'
 import {EventData} from "../types/types";
+
 const prisma = new PrismaClient()
 
 class DbEvent {
@@ -29,25 +30,29 @@ class DbEvent {
                     {start_time: {lte: oneWeekAhead}}
                 ]
             },
+            orderBy: {start_time: 'asc'},
             take: 3
         })
     }
 
-    async selectArchiveEvents(from?: Date, to?: Date): Promise<Event[]> {
-        if (!from) {
-            from = new Date()
-            from.setDate(from.getDate() - 31)
-        }
-        to = to ?? new Date()
+    async selectEventsInTimeSpan(from: Date, to: Date): Promise<Event[]> {
         return await prisma.event.findMany({
             where: {
                 AND: [
                     {start_time: {gte: from}},
                     {end_time: {lte: to}}
                 ]
-            }
+            },
+            orderBy: {start_time: 'asc'}
+        })
+    }
+
+    async selectEventsInFuture(): Promise<Event[]> {
+        const now = new Date()
+        return await prisma.event.findMany({
+            where: {end_time: {gte: now}},
+            orderBy: {start_time: 'asc'}
         })
     }
 }
-
 export default new DbEvent()

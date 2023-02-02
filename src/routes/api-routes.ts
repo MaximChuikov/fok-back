@@ -34,9 +34,9 @@ router.get('/archive-events',
     eventController.selectArchiveEvents)
 
 router.get('/nearest-events', eventController.selectNearestEvents)
+router.get('/future-events', eventController.selectFutureEvents)
 router.post('/event', authMid, roleAccess.managerAccess, eventController.addEvent)
 router.delete('/event', authMid, roleAccess.managerAccess, eventController.deleteEvent)
-router.get('/test', bookController.getTable)
 
 
 
