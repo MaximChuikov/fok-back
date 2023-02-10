@@ -47,4 +47,7 @@ router.delete('/book',
     query('book_id').isInt({min: 1}), check,
     authMid, bookController.deleteBook)
 
+//Abonnement
+router.post('/event', authMid, roleAccess.managerAccess, )
+
 export default router

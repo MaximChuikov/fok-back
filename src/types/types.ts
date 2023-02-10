@@ -31,10 +31,7 @@ export type EventData = {
 export type UserRegistrationData = {
     email: string,
     password_hash: string,
-    activation_link: string,
-    user_name: string,
-    user_surname: string,
-    phone_number: string
+    activation_link: string
 }
 
 export type BookRegistration = {

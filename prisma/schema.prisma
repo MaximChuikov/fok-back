@@ -8,20 +8,29 @@ datasource db {
 }
 
 model User {
-  email              String  @unique
+  email              String      @unique
   password_hash      String
-  is_activated_email Boolean @default(false)
-  activation_link    String  @unique
-  role               Role    @default(USER)
-  user_id            Int     @id @unique @default(autoincrement())
+  is_activated_email Boolean     @default(false)
+  activation_link    String      @unique
+  role               Role        @default(USER)
+  user_id            Int         @id @unique @default(autoincrement())
   Book               Book[]
   Token              Token?
+  Abonnement         Abonnement?
 }
 
 model Token {
   refresh_token String
   user_id       Int    @id @unique
   user          User   @relation(fields: [user_id], references: [user_id])
+}
+
+model Abonnement {
+  user_id     Int       @id @unique
+  user        User      @relation(fields: [user_id], references: [user_id])
+  bought      DateTime  @default(now())
+  visits_left Int?      @default(10)
+  ends        DateTime?
 }
 
 model Event {

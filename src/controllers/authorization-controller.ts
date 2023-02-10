@@ -15,10 +15,7 @@ class AuthorizationController {
             const userData = await userService.registration({
                 email: email,
                 password_hash: null,
-                user_name: 'Тест',
-                activation_link: null,
-                user_surname: 'Тестович',
-                phone_number: '89222'
+                activation_link: null
             }, password);
             res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true})
             return res.json(userData);

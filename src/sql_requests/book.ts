@@ -1,4 +1,4 @@
-import {PrismaClient, Book} from '@prisma/client'
+import {PrismaClient} from '@prisma/client'
 import {BookRegistration} from "../types/types";
 
 const prisma = new PrismaClient()
