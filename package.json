@@ -14,7 +14,10 @@
   "author": "Maxim Chuikov Alexandrovich",
   "license": "ISC",
   "dependencies": {
+    "@adminjs/express": "^5.1.0",
+    "@adminjs/prisma": "^3.0.1",
     "@prisma/client": "^4.10.0",
+    "adminjs": "^6.8.4",
     "axios": "^0.27.2",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
