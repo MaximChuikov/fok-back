@@ -68,8 +68,8 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
     admin,
     {
         authenticate,
-        cookieName: 'adminjs',
-        cookiePassword: 'helo'
+        cookieName: process.env.COOKIE_NAME,
+        cookiePassword: process.env.COOKIE_PASSWORD
     },
     null
 )
