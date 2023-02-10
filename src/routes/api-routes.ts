@@ -47,6 +47,4 @@ router.delete('/book',
     query('book_id').isInt({min: 1}), check,
     authMid, bookController.deleteBook)
 
-//
-
 export default router
