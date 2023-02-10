@@ -3,7 +3,7 @@ import {BookRegistration} from "../types/types";
 
 const prisma = new PrismaClient()
 
-class MyRequest {
+class DbBook {
     async createBook(data: BookRegistration) {
         const {start_time} = data.booking_list[0]
         const {end_time} = data.booking_list[data.booking_list.length - 1]
@@ -16,8 +16,8 @@ class MyRequest {
         return await prisma.book.count({
             where: {
                 AND: [
-                    {start_time: {lte: start}},
-                    {end_time: {gte: end}}
+                    {start_time: start},
+                    {end_time: end}
                 ]
             }
         })
@@ -40,4 +40,4 @@ class MyRequest {
     }
 }
 
-export default new MyRequest()
+export default new DbBook()

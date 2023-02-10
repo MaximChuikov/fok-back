@@ -38,6 +38,15 @@ router.get('/future-events', eventController.selectFutureEvents)
 router.post('/event', authMid, roleAccess.managerAccess, eventController.addEvent)
 router.delete('/event', authMid, roleAccess.managerAccess, eventController.deleteEvent)
 
+//Book
+router.get('/show-books',
+    query('day').isInt({min: 0}), check,
+    bookController.getTable)
+router.post('/book', authMid, bookController.createBook)
+router.delete('/book',
+    query('book_id').isInt({min: 1}), check,
+    authMid, bookController.deleteBook)
 
+//
 
 export default router

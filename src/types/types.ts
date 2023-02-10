@@ -15,6 +15,12 @@ export type Schedule = {
     }[]
 }
 
+export type Timetable = {
+    time_start: Date,
+    time_end: Date,
+    price: number
+}[]
+
 export type EventData = {
     end_time: Date,
     start_time: Date,
