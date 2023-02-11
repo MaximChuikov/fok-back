@@ -1,5 +1,4 @@
-import {PrismaClient, Book} from '@prisma/client'
-import {BookRegistration} from "../types/types";
+import {PrismaClient} from '@prisma/client'
 import ApiError from "../exceptions/api-error";
 
 const prisma = new PrismaClient()
@@ -13,6 +12,11 @@ class DbAbonnement {
     async checkAbonnementVisit(user_id: number): Promise<boolean> {
         const abonnementInfo = await prisma.abonnement.findUnique({where: {user_id: user_id}})
         return abonnementInfo?.visits_left >= 1 ?? false;
+    }
+
+    async selectAvailableVisits(user_id: number): Promise<number> {
+        const abonnementInfo = await prisma.abonnement.findUnique({where: {user_id: user_id}})
+        return abonnementInfo?.visits_left ?? 0
     }
 
     private async checkNewAbonnementAbility(user_id: number) {
@@ -64,6 +68,35 @@ class DbAbonnement {
             await prisma.abonnement.create({
                 data: newAbonnementData
             })
+        }
+    }
+
+    async updateUserVisits(user_id: number, visits: number) {
+        await prisma.abonnement.update({
+            where: {user_id: user_id},
+            data: {
+                visits_left: visits
+            }
+        })
+    }
+
+    async userAbonnementInfo(user_id: number) {
+        if (await this.checkAbonnementVisit(user_id)) {
+            const visits = await this.selectAvailableVisits(user_id)
+            return {
+                visits: visits
+            }
+        }
+        else if (await this.checkAbonnementDate(user_id, new Date())) {
+            const end = await prisma.abonnement.findUnique({
+                where: {user_id: user_id}
+            }).then(r => r.ends)
+            return {
+                ends: end
+            }
+        }
+        else {
+            return {}
         }
     }
 }

@@ -9,6 +9,7 @@ import authMid from '../middlewares/auth-middleware'
 import roleAccess from "../middlewares/roleAccess";
 import eventController from "../controllers/eventController";
 import bookController from "../controllers/book-controller";
+import abonnementController from "../controllers/abonnement-controller";
 
 // Auth
 router.post('/registration',
@@ -39,7 +40,7 @@ router.post('/event', authMid, roleAccess.managerAccess, eventController.addEven
 router.delete('/event', authMid, roleAccess.managerAccess, eventController.deleteEvent)
 
 //Book
-router.get('/show-books',
+router.get('/show-books', authMid,
     query('day').isInt({min: 0}), check,
     bookController.getTable)
 router.post('/book', authMid, bookController.createBook)
@@ -48,6 +49,16 @@ router.delete('/book',
     authMid, bookController.deleteBook)
 
 //Abonnement
-router.post('/event', authMid, roleAccess.managerAccess, )
+router.post('/assign-ten-visits-abonnement', authMid, roleAccess.managerAccess,
+    query('user_id').isInt({min: 1}), check, abonnementController.assignTenVisits)
+router.post('/assign-two-months-abonnement', authMid, roleAccess.managerAccess,
+    query('user_id').isInt({min: 1}), check, abonnementController.assignTwoMonths)
+
+router.get('/my-abonnement-info', authMid, abonnementController.myAbonnementInfo)
+router.get('/user-abonnement-info', authMid, roleAccess.managerAccess,
+    query('user_id').isInt({min: 1}), check, abonnementController.userAbonnementInfo)
+router.put('/decrease-visits', authMid, roleAccess.managerAccess,
+    query('user_id').isInt({min: 1}),
+    query('visits').isInt({min: 1}), check, abonnementController.decreaseUserVisits)
 
 export default router

@@ -21,6 +21,15 @@ export type Timetable = {
     price: number
 }[]
 
+export type PayInfo = {
+    free_hours: number,
+    payed_hours: number
+}
+
+export type AbonnementInfo = { visits: number, ends?: undefined } |
+    { ends: Date, visits?: undefined} |
+    {visits?: undefined, ends?: undefined}
+
 export type EventData = {
     end_time: Date,
     start_time: Date,

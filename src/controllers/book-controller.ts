@@ -1,9 +1,10 @@
 import {Request, Response, NextFunction} from 'express';
 import ApiError from '../exceptions/api-error'
 import bookDb from '../sql_requests/book'
-import {BookRegistration} from "../types/types";
-import {schedule} from '../service/day-of-week'
+import {PayInfo, BookRegistration} from "../types/types";
+import {schedule} from '../service/schedule'
 import book from "../sql_requests/book";
+import abonnement from "../sql_requests/abonnement";
 
 class BookController {
     async createBook(req: Request, res: Response, next: NextFunction) {
@@ -29,9 +30,30 @@ class BookController {
 
     async getTable(req: Request, res: Response, next: NextFunction) {
         try {
-            const day = req.query.day
-            // @ts-ignore
-            res.json(await schedule(parseInt(day)))
+            const day = parseInt(req.query.day as string)
+            const sch = await schedule(day)
+            const date = new Date()
+            date.setDate(date.getDate() + day)
+            const {u_id} = req.user
+
+            const pay_info: PayInfo = {
+                free_hours: 0,
+                payed_hours: 4
+            }
+            if (await abonnement.checkAbonnementVisit(u_id)) {
+                let visits = await abonnement.selectAvailableVisits(u_id)
+                visits = visits > 4 ? 4 : visits
+                pay_info.free_hours = visits
+                pay_info.payed_hours -= visits
+            }
+            else if (await abonnement.checkAbonnementDate(u_id, date)) {
+                pay_info.free_hours = 2
+                pay_info.payed_hours = 2
+            }
+            res.json({
+                pay_info: pay_info,
+                schedule: sch
+            })
         } catch (e) {
             next(e);
         }
@@ -39,8 +61,7 @@ class BookController {
 
     async deleteBook(req: Request, res: Response, next: NextFunction) {
         try {
-            // @ts-ignore
-            await bookDb.deleteBook(parseInt(req.query.book_id))
+            await bookDb.deleteBook(parseInt(req.query.book_id as string))
         } catch (e) {
             next(e);
         }
