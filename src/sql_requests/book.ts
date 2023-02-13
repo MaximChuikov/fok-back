@@ -5,11 +5,17 @@ const prisma = new PrismaClient()
 
 class DbBook {
     async createBook(data: BookRegistration) {
-        const {start_time} = data.booking_list[0]
-        const {end_time} = data.booking_list[data.booking_list.length - 1]
-        data.start_time = start_time
-        data.end_time = end_time
-        await prisma.book.create({data: data})
+        await prisma.book.create({
+            data: {
+                free_hours: data.free_hours,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                user_id: data.user_id,
+                payed_hours: data.payed_hours,
+                user_registered: data.user_registered,
+                non_reg_user_name: data.non_reg_user_name
+            }
+        })
     }
 
     async bookedCount(start: Date, end: Date) {
@@ -34,6 +40,17 @@ class DbBook {
                 AND: [
                     {end_time: {gt: now}},
                     {user_id: user_id}
+                ]
+            }
+        })
+    }
+
+    async userBooks(user_id: number) {
+        return await prisma.book.findMany({
+            where: {
+                AND: [
+                    {user_id: user_id},
+                    {end_time: {gte: new Date()}}
                 ]
             }
         })

@@ -17,24 +17,6 @@ AdminJS.registerAdapter({
     Database: AdminJSPrisma.Database,
 })
 
-const dmmf = ((prisma as any)._baseDmmf as DMMFClass)
-const adminOptions = {
-    resources: [
-        {
-            resource: {model: dmmf.modelMap.Event, client: prisma},
-            options: {},
-        },
-        {
-            resource: { model: dmmf.modelMap.User, client: prisma },
-            options: {},
-        },
-        {
-            resource: { model: dmmf.modelMap.Book, client: prisma },
-            options: {},
-        }
-    ],
-}
-
 const AdminJSExpress = require('@adminjs/express')
 
 const PORT = 8080;
@@ -50,7 +32,35 @@ declare global {
 
 const app = express();
 
-const admin = new AdminJS(adminOptions)
+const dmmf = ((prisma as any)._baseDmmf as DMMFClass)
+const admin = new AdminJS({
+    resources: [
+        {
+            resource: {model: dmmf.modelMap.Event, client: prisma},
+            options: {},
+        },
+        {
+            resource: { model: dmmf.modelMap.User, client: prisma },
+            options: {
+                properties: {
+                    activation_link: {
+                        isVisible: {
+                            show: false
+                        },
+                    }
+                },
+            }
+        },
+        {
+            resource: { model: dmmf.modelMap.Book, client: prisma },
+            options: {},
+        },
+        {
+            resource: { model: dmmf.modelMap.Abonnement, client: prisma },
+            options: {},
+        }
+    ],
+})
 
 const DEFAULT_ADMIN = {
     email: process.env.ADMIN_LOGIN,

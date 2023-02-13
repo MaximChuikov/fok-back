@@ -1,12 +1,13 @@
 import {PrismaClient} from '@prisma/client'
 import ApiError from "../exceptions/api-error";
+import {AbonnementInfo} from "../types/types";
 
 const prisma = new PrismaClient()
 
 class DbAbonnement {
     async checkAbonnementDate(user_id: number, date: Date): Promise<boolean> {
         const abonnementInfo = await prisma.abonnement.findUnique({where: {user_id: user_id}})
-        return abonnementInfo?.ends <= date ?? false;
+        return abonnementInfo?.ends >= date ?? false;
     }
 
     async checkAbonnementVisit(user_id: number): Promise<boolean> {
@@ -80,7 +81,7 @@ class DbAbonnement {
         })
     }
 
-    async userAbonnementInfo(user_id: number) {
+    async userAbonnementInfo(user_id: number): Promise<AbonnementInfo> {
         if (await this.checkAbonnementVisit(user_id)) {
             const visits = await this.selectAvailableVisits(user_id)
             return {

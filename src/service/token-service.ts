@@ -16,7 +16,6 @@ class TokenService {
         try {
             // @ts-ignore
             const userData: UserDto = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-            console.log('validate access', userData)
             return userData;
         } catch (e) {
             return null;
@@ -27,7 +26,6 @@ class TokenService {
         try {
             // @ts-ignore
             const userData: UserDto = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-            console.log('validate refresh', userData)
             return userData;
         } catch (e) {
             return null;

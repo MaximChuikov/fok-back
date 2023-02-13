@@ -52,8 +52,9 @@ export type BookRegistration = {
     booking_list: {
         start_time: Date
         end_time: Date
-    }[]
-    payment_data: Prisma.JsonValue
+    }[],
+    free_hours: number,
+    payed_hours: number
 }
 
 export type FutureEvents = {

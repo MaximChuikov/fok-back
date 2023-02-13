@@ -14,9 +14,9 @@ model User {
   activation_link    String      @unique
   role               Role        @default(USER)
   user_id            Int         @id @unique @default(autoincrement())
+  Abonnement         Abonnement?
   Book               Book[]
   Token              Token?
-  Abonnement         Abonnement?
 }
 
 model Token {
@@ -26,11 +26,12 @@ model Token {
 }
 
 model Abonnement {
-  user_id     Int       @id @unique
-  user        User      @relation(fields: [user_id], references: [user_id])
-  bought      DateTime  @default(now())
-  visits_left Int?      @default(10)
-  ends        DateTime?
+  abonnement_id Int       @id @unique @default(autoincrement())
+  user_id       Int       @unique
+  bought        DateTime  @default(now())
+  visits_left   Int?      @default(10)
+  ends          DateTime?
+  user          User      @relation(fields: [user_id], references: [user_id])
 }
 
 model Event {
@@ -48,7 +49,8 @@ model Book {
   start_time        DateTime
   end_time          DateTime
   status            BookStatus @default(PAYMENT_EXPECTED)
-  payment_data      Json
+  free_hours        Int
+  payed_hours       Int
   user_id           Int?
   user              User?      @relation(fields: [user_id], references: [user_id])
 }

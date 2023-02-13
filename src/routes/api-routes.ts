@@ -43,6 +43,7 @@ router.delete('/event', authMid, roleAccess.managerAccess, eventController.delet
 router.get('/show-books', authMid,
     query('day').isInt({min: 0}), check,
     bookController.getTable)
+router.get('/my-books', authMid, bookController.myBooks)
 router.post('/book', authMid, bookController.createBook)
 router.delete('/book',
     query('book_id').isInt({min: 1}), check,
