@@ -1,4 +1,4 @@
-import {PrismaClient} from '@prisma/client'
+import {PrismaClient, BookStatus} from '@prisma/client'
 import {BookRegistration} from "../types/types";
 
 const prisma = new PrismaClient()
@@ -33,7 +33,7 @@ class DbBook {
         await prisma.book.delete({where: {book_id: book_id}})
     }
 
-    async userWaitingBooks(user_id: number) {
+    async userWaitingBooks(user_id: number): Promise<number> {
         const now = new Date()
         return prisma.book.count({
             where: {
@@ -55,6 +55,27 @@ class DbBook {
             }
         })
     }
+
+    async timeFullInfo(start_time: Date, end_time: Date) {
+        return await prisma.book.findMany({
+            where: {
+                AND: [
+                    {end_time: {gte: end_time}},
+                    {start_time: {lte: start_time}}
+                ]
+            }
+        })
+    }
+    async bookById(book_id: number) {
+        return await prisma.book.findUnique({where: {book_id: book_id}})
+    }
+    async applyBook(book_id: number) {
+        await prisma.book.update({
+            where: {book_id: book_id},
+            data: {status: BookStatus.PAID}
+        })
+    }
+
 }
 
 export default new DbBook()

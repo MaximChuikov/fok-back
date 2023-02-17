@@ -48,6 +48,12 @@ router.post('/book', authMid, bookController.createBook)
 router.delete('/book',
     query('book_id').isInt({min: 1}), check,
     authMid, bookController.deleteBook)
+router.get('/time-full-info', authMid, roleAccess.managerAccess,
+    query('time_start'), query('time_end'), check,
+    bookController.getFullInfoAboutTimeBooks)
+// router.post('/apply-book',
+//     query('book_id').isInt({min: 1}), check,
+//     authMid, roleAccess.managerAccess, bookController.)
 
 //Abonnement
 router.post('/assign-ten-visits-abonnement', authMid, roleAccess.managerAccess,
