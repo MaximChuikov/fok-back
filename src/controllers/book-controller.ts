@@ -5,7 +5,8 @@ import DbBook from '../sql_requests/book'
 import {BookRegistration, PayInfo} from "../types/types";
 import {schedule} from '../service/schedule'
 import abonnement from "../sql_requests/abonnement";
-import book from "../sql_requests/book";
+import userService from "../service/user-service";
+import Abonnement from "../sql_requests/abonnement";
 
 class BookController {
     async createBook(req: Request, res: Response, next: NextFunction) {
@@ -24,19 +25,21 @@ class BookController {
                         bookData.end_time =
                             bookData.booking_list.map(e => e.end_time).reduce(function (a, b) { return a > b ? a : b; })
 
-                        const userAbonnement = await abonnement.userAbonnementInfo(req.user.u_id)
-                        const userBooks = await DbBook.userBooks(bookData.user_id)
-                        userBooks.forEach((e) => {
-                            if (e.end_time > bookData.start_time && e.start_time < bookData.end_time)
-                                throw ApiError.BadRequest('Вы уже забронировали зал на это время.')
-                        })
+                        const missed = await userService.userMissed(req.user.u_id)
+                        if (missed >= 3)
+                            throw ApiError.BadRequest('Вы не пришли на забронированное время 3 раза. ' +
+                                'Разблокировать возможность брони можно только в ФОКе.')
 
-                        // if (userAbonnement.ends && bookData.free_hours > 0 && (userAbonnement?.visits === 0 ?? true)) {
-                        //     userBooks.map(e => e.start_time.toDateString()).forEach((e) => {
-                        //
-                        //     })
-                        // }
+                        for (const e of bookData.booking_list) {
+                            const count = await DbBook.bookedCount(e.start_time, e.end_time)
+                            if (count >= 15)
+                                throw ApiError.BadRequest(`На время ${e.start_time.toLocaleTimeString()} - `
+                                + `${e.end_time.toLocaleTimeString()} уже занято максимальное кол-во человек. Мы не можем принять бронь`)
+                        }
 
+                        const userBooks = await DbBook.userWaitingBooks(req.user.u_id)
+                        if (userBooks >= 1)
+                            throw ApiError.BadRequest('Вы не можете создать более одной броней.')
 
                         await DbBook.createBook(bookData)
                         res.json({result: true})
@@ -67,11 +70,9 @@ class BookController {
                 payed_hours: 4
             }
             if (await abonnement.checkAbonnementDate(u_id, date)) {
-
-
-
-                pay_info.free_hours = 2
-                pay_info.payed_hours = 2
+                const free = await abonnement.getAvailableHoursWithMonthAbonnement(u_id, date)
+                pay_info.free_hours = free
+                pay_info.payed_hours = 4 - free
             }
             else if (await abonnement.checkAbonnementVisit(u_id)) {
                 let visits = await abonnement.selectAvailableVisits(u_id)
@@ -88,14 +89,6 @@ class BookController {
         }
     }
 
-    async deleteBook(req: Request, res: Response, next: NextFunction) {
-        try {
-            await bookDb.deleteBook(parseInt(req.query.book_id as string))
-        } catch (e) {
-            next(e);
-        }
-    }
-
     async myBooks(req: Request, res: Response, next: NextFunction) {
         try {
             res.json(await bookDb.userBooks(req.user.u_id))
@@ -104,6 +97,7 @@ class BookController {
         }
     }
 
+    //TODO: 2
     async getFullInfoAboutTimeBooks(req: Request, res: Response, next: NextFunction) {
         try {
             const start_time = new Date(req.query.time_start as string)
@@ -121,14 +115,54 @@ class BookController {
         }
     }
 
+    //TODO: 1
     async applyBook(req: Request, res: Response, next: NextFunction) {
         try {
             const book_id = parseInt(req.query.book_id as string)
             const book_info = await bookDb.bookById(book_id)
+            const {user_id} = book_info
 
-
+            const abonnement = await Abonnement.userAbonnementInfo(user_id)
+            if (abonnement?.visits ?? 0 >= book_info.free_hours) {
+                await Abonnement.updateUserVisits(user_id, abonnement.visits - book_info.free_hours)
+            }
+            else if (abonnement.ends == null){
+                throw ApiError.BadRequest("Недостаточно бесплатных посещений для снятия! " +
+                    `У пользователя ${abonnement?.visits ?? 0} часов, нужно ${book_info.free_hours}`)
+            }
+            await userService.zeroUserMisses(user_id)
             await bookDb.applyBook(book_id)
+            res.json('Бронь успешно принята.')
         } catch (e) {
+            next(e);
+        }
+    }
+
+    //TODO: 3
+    async cancelBook(req: Request, res: Response, next: NextFunction) {
+        try {
+            const now = new Date()
+            const hourAhead = new Date(now.getTime() + 3600*1000)
+
+            const book_id = parseInt(req.query.book_id as string)
+            const {start_time} = await bookDb.bookById(book_id)
+            if (start_time >= hourAhead) {
+                await bookDb.deleteBook(book_id)
+                res.json("Бронь успешно отменена.")
+            }
+            else {
+                throw ApiError.BadRequest('Нельзя отменить бронь менее чем за час до начала.')
+            }
+        }catch (e) {
+            next(e);
+        }
+    }
+    async adminCancelBook(req: Request, res: Response, next: NextFunction) {
+        try {
+            const book_id = parseInt(req.query.book_id as string)
+            await bookDb.deleteBook(book_id)
+            res.json("Бронь успешно отменена.")
+        }catch (e) {
             next(e);
         }
     }

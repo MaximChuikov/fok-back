@@ -12,6 +12,7 @@ model User {
   password_hash      String
   is_activated_email Boolean     @default(false)
   activation_link    String      @unique
+  missed             Int         @default(0)
   role               Role        @default(USER)
   user_id            Int         @id @unique @default(autoincrement())
   Abonnement         Abonnement?

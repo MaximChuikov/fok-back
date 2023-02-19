@@ -1,4 +1,4 @@
-import {PrismaClient} from '@prisma/client'
+import {BookStatus, PrismaClient} from '@prisma/client'
 import ApiError from "../exceptions/api-error";
 import {AbonnementInfo} from "../types/types";
 
@@ -8,6 +8,24 @@ class DbAbonnement {
     async checkAbonnementDate(user_id: number, date: Date): Promise<boolean> {
         const abonnementInfo = await prisma.abonnement.findUnique({where: {user_id: user_id}})
         return abonnementInfo?.ends >= date ?? false;
+    }
+    async getAvailableHoursWithMonthAbonnement(user_id: number, date: Date): Promise<number> {
+        const start = new Date(date.getTime())
+        start.setHours(0,0,0)
+        const end = new Date(date.getTime())
+        end.setHours(23,59,59)
+        const books = await prisma.book.findMany({
+            where: {
+                AND: [
+                    {user_id: user_id},
+                    {status: BookStatus.PAID},
+                    {free_hours: {gte: 1}},
+                    {start_time: {gte: start}},
+                    {end_time: {lte: end}}
+                ]
+            }
+        })
+        return 2 - books.reduce((a, c) => a + c.free_hours, 0)
     }
 
     async checkAbonnementVisit(user_id: number): Promise<boolean> {

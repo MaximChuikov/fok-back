@@ -70,6 +70,14 @@ class UserService {
         await tokenService.saveToken(user.user_id, tokens.refreshToken);
         return {...tokens, user: userDto}
     }
+
+    async userMissed(user_id: number) {
+        return await userDb.userMissed(user_id)
+    }
+    async zeroUserMisses(user_id: number) {
+        await userDb.zeroUserMisses(user_id)
+    }
+
 }
 
 export default new UserService();

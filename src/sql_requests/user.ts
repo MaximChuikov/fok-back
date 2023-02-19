@@ -27,6 +27,21 @@ class DbUser {
             data: {is_activated_email: true}
         })
     }
+    async userMissed(u_id: number): Promise<number> {
+        return await prisma.user.findUnique({
+            select: {missed: true},
+            where: {user_id: u_id}
+        }).then(r => r.missed)
+    }
+
+    async zeroUserMisses(u_id) {
+        await prisma.user.update({
+            where: {user_id: u_id},
+            data: {
+                missed: 0
+            }
+        })
+    }
 }
 
 export default new DbUser()

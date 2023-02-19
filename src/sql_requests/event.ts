@@ -26,7 +26,7 @@ class DbEvent {
         return await prisma.event.findMany({
             where: {
                 AND: [
-                    {start_time: {gte: now}},
+                    {end_time: {gte: now}},
                     {start_time: {lte: oneWeekAhead}}
                 ]
             },

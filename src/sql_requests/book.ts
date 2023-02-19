@@ -19,11 +19,12 @@ class DbBook {
     }
 
     async bookedCount(start: Date, end: Date) {
+        // db_e > s && db_s < e
         return await prisma.book.count({
             where: {
                 AND: [
-                    {start_time: start},
-                    {end_time: end}
+                    {end_time: {gt: start}},
+                    {start_time: {lt: end}}
                 ]
             }
         })

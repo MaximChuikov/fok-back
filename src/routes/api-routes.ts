@@ -45,15 +45,21 @@ router.get('/show-books', authMid,
     bookController.getTable)
 router.get('/my-books', authMid, bookController.myBooks)
 router.post('/book', authMid, bookController.createBook)
+//TODO: 1
 router.delete('/book',
     query('book_id').isInt({min: 1}), check,
-    authMid, bookController.deleteBook)
+    authMid, bookController.cancelBook)
+//TODO: 1
+router.delete('/admin-book',
+    query('book_id').isInt({min: 1}), check,
+    authMid, roleAccess.managerAccess, bookController.adminCancelBook)
 router.get('/time-full-info', authMid, roleAccess.managerAccess,
     query('time_start'), query('time_end'), check,
     bookController.getFullInfoAboutTimeBooks)
-// router.post('/apply-book',
-//     query('book_id').isInt({min: 1}), check,
-//     authMid, roleAccess.managerAccess, bookController.)
+//TODO:
+router.post('/apply-book',
+    query('book_id').isInt({min: 1}), check,
+    authMid, roleAccess.managerAccess, bookController.applyBook)
 
 //Abonnement
 router.post('/assign-ten-visits-abonnement', authMid, roleAccess.managerAccess,
