@@ -92,8 +92,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    //origin: ['https://фокбулатова.рф', 'http://localhost:3000']
-    origin: 'https://фокбулатова.рф'
+    origin: ['https://фокбулатова.рф']
 }));
 app.use('/api', router);
 app.use(errorMiddleware)
