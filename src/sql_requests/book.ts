@@ -5,6 +5,7 @@ const prisma = new PrismaClient()
 
 class DbBook {
     async createBook(data: BookRegistration) {
+        delete(data.booking_list)
         await prisma.book.create({
             data: {
                 free_hours: data.free_hours,
@@ -64,6 +65,9 @@ class DbBook {
                     {end_time: {gte: end_time}},
                     {start_time: {lte: start_time}}
                 ]
+            },
+            orderBy: {
+                status: "asc"
             }
         })
     }

@@ -8,6 +8,7 @@ class AbonnementController {
         try {
             const user_id = parseInt(req.query.user_id as string)
             await abonnement.addTenVisitsAbonnement(user_id)
+            res.json("Абонемент успешно добавлен")
         } catch (e) {
             next(e);
         }
@@ -16,6 +17,7 @@ class AbonnementController {
         try {
             const user_id = parseInt(req.query.user_id as string)
             await abonnement.addTwoMonthAbonnement(user_id)
+            res.json("Абонемент успешно добавлен")
         } catch (e) {
             next(e);
         }

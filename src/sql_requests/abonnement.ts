@@ -50,6 +50,7 @@ class DbAbonnement {
         const now = new Date()
         const twoMonths = new Date(now.getTime())
         twoMonths.setMonth(twoMonths.getMonth() + 2)
+        twoMonths.setHours(23, 59, 59)
 
         const newAbonnementData = {
             user_id: user_id,
@@ -75,7 +76,7 @@ class DbAbonnement {
         const newAbonnementData = {
             user_id: user_id,
             bought: new Date(),
-            visits: 10
+            visits_left: 10
         }
 
         if (await prisma.abonnement.findUnique({where: {user_id: user_id}})) {

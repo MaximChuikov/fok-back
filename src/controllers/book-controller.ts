@@ -57,6 +57,25 @@ class BookController {
         }
     }
 
+    async adminCreateBook(req: Request, res: Response, next: NextFunction) {
+        try {
+            const bookData: BookRegistration = req.body
+            bookData.booking_list.forEach(e => {
+                e.start_time = new Date(e.start_time)
+                e.end_time = new Date(e.end_time)
+            })
+            bookData.start_time =
+                bookData.booking_list.map(e => e.start_time).reduce(function (a, b) { return a < b ? a : b; })
+            bookData.end_time =
+                bookData.booking_list.map(e => e.end_time).reduce(function (a, b) { return a > b ? a : b; })
+
+            await DbBook.createBook(bookData)
+            res.json({result: true})
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async getTable(req: Request, res: Response, next: NextFunction) {
         try {
             const day = parseInt(req.query.day as string)

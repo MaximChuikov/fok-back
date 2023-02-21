@@ -45,6 +45,7 @@ router.get('/show-books', authMid,
     bookController.getTable)
 router.get('/my-books', authMid, bookController.myBooks)
 router.post('/book', authMid, bookController.createBook)
+router.post('/admin_book', authMid, roleAccess.managerAccess, bookController.adminCreateBook)
 //TODO: 1
 router.delete('/book',
     query('book_id').isInt({min: 1}), check,
