@@ -45,17 +45,17 @@ class DbAbonnement {
             throw new ApiError(409, `У пользователя с id ${user_id} еще действует абонемент, купленный на 10 занятий.`)
     }
 
-    async addTwoMonthAbonnement(user_id: number) {
+    async addMonthAbonnement(user_id: number, months: number) {
         await this.checkNewAbonnementAbility(user_id)
         const now = new Date()
-        const twoMonths = new Date(now.getTime())
-        twoMonths.setMonth(twoMonths.getMonth() + 2)
-        twoMonths.setHours(23, 59, 59)
+        const nMonths = new Date(now.getTime())
+        nMonths.setMonth(nMonths.getMonth() + months)
+        nMonths.setHours(23, 59, 59)
 
         const newAbonnementData = {
             user_id: user_id,
             bought: now,
-            ends: twoMonths
+            ends: nMonths
         }
 
         if (await prisma.abonnement.findUnique({where: {user_id: user_id}})) {

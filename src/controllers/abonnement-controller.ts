@@ -16,7 +16,8 @@ class AbonnementController {
     async assignTwoMonths(req: Request, res: Response, next: NextFunction) {
         try {
             const user_id = parseInt(req.query.user_id as string)
-            await abonnement.addTwoMonthAbonnement(user_id)
+            const months = parseInt(req.query.months as string)
+            await abonnement.addMonthAbonnement(user_id, months)
             res.json("Абонемент успешно добавлен")
         } catch (e) {
             next(e);

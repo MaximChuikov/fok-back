@@ -66,7 +66,8 @@ router.post('/apply-book',
 router.post('/assign-ten-visits-abonnement', authMid, roleAccess.managerAccess,
     query('user_id').isInt({min: 1}), check, abonnementController.assignTenVisits)
 router.post('/assign-two-months-abonnement', authMid, roleAccess.managerAccess,
-    query('user_id').isInt({min: 1}), check, abonnementController.assignTwoMonths)
+    query('user_id').isInt({min: 1}),
+    query('months').isInt({min: 1}), check, abonnementController.assignTwoMonths)
 
 router.get('/my-abonnement-info', authMid, abonnementController.myAbonnementInfo)
 router.get('/user-abonnement-info', authMid, roleAccess.managerAccess,
