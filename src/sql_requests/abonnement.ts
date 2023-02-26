@@ -40,7 +40,7 @@ class DbAbonnement {
 
     private async checkNewAbonnementAbility(user_id: number) {
         if (await this.checkAbonnementDate(user_id, new Date()))
-            throw new ApiError(409, `У пользователя с id ${user_id} еще действует абонемент, купленный на 2 месяца.`)
+            throw new ApiError(409, `У пользователя с id ${user_id} еще действует временной абонемент.`)
         if (await this.checkAbonnementVisit(user_id))
             throw new ApiError(409, `У пользователя с id ${user_id} еще действует абонемент, купленный на 10 занятий.`)
     }
