@@ -139,17 +139,19 @@ class BookController {
         try {
             const book_id = parseInt(req.query.book_id as string)
             const book_info = await bookDb.bookById(book_id)
-            const {user_id} = book_info
+            const {user_id, user_registered} = book_info
 
-            const abonnement = await Abonnement.userAbonnementInfo(user_id)
-            if (abonnement?.visits ?? 0 >= book_info.free_hours) {
-                await Abonnement.updateUserVisits(user_id, abonnement.visits - book_info.free_hours)
+            if (user_registered) {
+                const abonnement = await Abonnement.userAbonnementInfo(user_id)
+                if (abonnement?.visits ?? 0 >= book_info.free_hours) {
+                    await Abonnement.updateUserVisits(user_id, abonnement.visits - book_info.free_hours)
+                }
+                else if (abonnement.ends == null){
+                    throw ApiError.BadRequest("Недостаточно бесплатных посещений для снятия! " +
+                        `У пользователя ${abonnement?.visits ?? 0} часов, нужно ${book_info.free_hours}`)
+                }
+                await userService.zeroUserMisses(user_id)
             }
-            else if (abonnement.ends == null){
-                throw ApiError.BadRequest("Недостаточно бесплатных посещений для снятия! " +
-                    `У пользователя ${abonnement?.visits ?? 0} часов, нужно ${book_info.free_hours}`)
-            }
-            await userService.zeroUserMisses(user_id)
             await bookDb.applyBook(book_id)
             res.json('Бронь успешно принята.')
         } catch (e) {
