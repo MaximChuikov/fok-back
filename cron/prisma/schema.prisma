@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  email              String      @unique
+  password_hash      String
+  is_activated_email Boolean     @default(false)
+  activation_link    String      @unique
+  missed             Int         @default(0)
+  role               Role        @default(USER)
+  user_id            Int         @id @unique @default(autoincrement())
+  Abonnement         Abonnement?
+  Book               Book[]
+  Token              Token?
+}
+
+model Token {
+  refresh_token String
+  user_id       Int    @id @unique
+  user          User   @relation(fields: [user_id], references: [user_id])
+}
+
+model Abonnement {
+  abonnement_id Int       @id @unique @default(autoincrement())
+  user_id       Int       @unique
+  bought        DateTime  @default(now())
+  visits_left   Int?      @default(10)
+  ends          DateTime?
+  user          User      @relation(fields: [user_id], references: [user_id])
+}
+
+model Event {
+  event_id               Int      @id @unique @default(autoincrement())
+  start_time             DateTime
+  end_time               DateTime
+  publication_date_title String
+  event_description      String
+}
+
+model Book {
+  book_id           Int        @id @unique @default(autoincrement())
+  user_registered   Boolean    @default(true)
+  non_reg_user_name String?
+  start_time        DateTime
+  end_time          DateTime
+  status            BookStatus @default(PAYMENT_EXPECTED)
+  free_hours        Int
+  payed_hours       Int
+  user_id           Int?
+  user              User?      @relation(fields: [user_id], references: [user_id])
+}
+
+enum BookStatus {
+  PAYMENT_EXPECTED
+  PAID
+}
+
+enum Role {
+  ADMIN
+  ADMINISTRATOR
+  USER
+}
