@@ -1,4 +1,0 @@
-.env
-prisma/migrations
-tests
-dist

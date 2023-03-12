@@ -6,6 +6,7 @@ import router from './routes/api-routes'
 import UserDto from "./dtos/user-dto";
 import AdminJS from "adminjs";
 
+import {each_hour} from "./cron"
 import * as AdminJSPrisma from '@adminjs/prisma'
 import {PrismaClient} from '@prisma/client'
 import {DMMFClass} from '@prisma/client/runtime'
@@ -88,11 +89,17 @@ app.use(admin.options.rootPath, adminRouter)
 console.log(`AdminJS started on http://localhost:${PORT}${admin.options.rootPath}`)
 
 
+const cron = require('node-cron');
+cron.schedule('4 * * * *', async () => {
+    await each_hour()
+});
+
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: ['https://фокбулатова.рф', "http://localhost:3000"]
+    origin: ['https://фокбулатова.рф'] //, "http://localhost:3000"
 }));
 app.use('/api', router);
 app.use(errorMiddleware)

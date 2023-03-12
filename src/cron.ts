@@ -1,7 +1,7 @@
 import {BookStatus, PrismaClient} from '@prisma/client'
 const prisma = new PrismaClient()
 
-async function each_hour() {
+export async function each_hour() {
     const now = new Date()
     const hourAgo = new Date(now.getTime() - 1000 * 60 * 60)
     //   12 --- 14 book, 14:01 script, 13:01 < 14:00 <= 14:01 -> missed
@@ -24,6 +24,4 @@ async function each_hour() {
             }
         })
     }
-
 }
-each_hour().then()
