@@ -1,4 +1,5 @@
 const amqplib = require('amqplib');
+const axios = require("axios");
 
 async function waitAndConnect() {
     let isConnected = false;
@@ -28,10 +29,21 @@ async function consume(consumerName) {
         await channel.assertQueue(queueName);
         console.log(`${consumerName} waiting for messages from queue: ${queueName}`);
 
-        await channel.consume(queueName, (msg) => {
+        await channel.consume(queueName, async (msg) => {
             if (msg.content) {
                 const message = JSON.parse(msg.content.toString());
                 // Обработка сообщения
+                if (message?.['link']) {
+                    await axios.post('http://nginx:80/linksConsumer', {
+                        link: message.link
+                    }).then(() => console.log('Consumer: успех'))
+                        .catch((e) => console.log('Consumer: провал', e))
+                } else {
+                    await axios.put(`http://nginx:80/linksConsumer/${message.id}`, {
+                        status: message.status
+                    }).then(() => console.log('Consumer: успех'))
+                        .catch((e) => console.log('Consumer: провал', e))
+                }
                 console.log(`${consumerName} received message: ${message.link}`);
             }
         }, {noAck: true});
@@ -39,6 +51,7 @@ async function consume(consumerName) {
         console.error(`${consumerName} error:`, error);
     }
 }
+
 const consumerName = process.argv[2] || 'Consumer';
 consume(consumerName).then();
 
